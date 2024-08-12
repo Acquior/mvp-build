@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Martech Fin MVP</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <script>
+        let contract;
+        let signer;
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    const contractAddress = '0x1234567890123456789012345678901234567890'; // Replace with your deployed contract address
+                    const contractABI = [
+                        "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+                        "function payInvoice(uint256 tokenId) public payable",
+                        "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+                        "function buyInvoice(uint256 tokenId) public payable"
+                    ];
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    document.getElementById('status').textContent = 'Connected';
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('status').textContent = 'Connection failed';
+                }
+            } else {
+                document.getElementById('status').textContent = 'Please install MetaMask';
+            }
+        }
+
+        async function createInvoice() {
+            const recipient = document.getElementById('recipient').value;
+            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+            try {
+                const tx = await contract.createInvoice(recipient, amount);
+                await tx.wait();
+                document.getElementById('result').textContent = 'Invoice created successfully!';
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').textContent = 'Error creating invoice';
+            }
+        }
+
+        async function payInvoice() {
+            const tokenId = document.getElementById('payTokenId').value;
+            const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
+            try {
+                const tx = await contract.payInvoice(tokenId, { value: amount });
+                await tx.wait();
+                document.getElementById('result').textContent = 'Invoice paid successfully!';
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').textContent = 'Error paying invoice';
+            }
+        }
+
+        async function listInvoiceForSale() {
+            const tokenId = document.getElementById('listTokenId').value;
+            const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
+            try {
+                const tx = await contract.listInvoiceForSale(tokenId, salePrice);
+                await tx.wait();
+                document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').textContent = 'Error listing invoice for sale';
+            }
+        }
+
+        async function buyInvoice() {
+            const tokenId = document.getElementById('buyTokenId').value;
+            const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
+            try {
+                const tx = await contract.buyInvoice(tokenId, { value: amount });
+                await tx.wait();
+                document.getElementById('result').textContent = 'Invoice bought successfully!';
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').textContent = 'Error buying invoice';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Martech Fin MVP</h1>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <p>Status: <span id="status">Not connected</span></p>
+
+    <h2>Create Invoice</h2>
+    <input id="recipient" type="text" placeholder="Recipient address">
+    <input id="amount" type="text" placeholder="Amount in ETH">
+    <button onclick="createInvoice()">Create Invoice</button>
+
+    <h2>Pay Invoice</h2>
+    <input id="payTokenId" type="number" placeholder="Token ID">
+    <input id="payAmount" type="text" placeholder="Amount in ETH">
+    <button onclick="payInvoice()">Pay Invoice</button>
+
+    <h2>List Invoice for Sale</h2>
+    <input id="listTokenId" type="number" placeholder="Token ID">
+    <input id="salePrice" type="text" placeholder="Sale Price in ETH">
+    <button onclick="listInvoiceForSale()">List for Sale</button>
+
+    <h2>Buy Invoice</h2>
+    <input id="buyTokenId" type="number" placeholder="Token ID">
+    <input id="buyAmount" type="text" placeholder="Amount in ETH">
+    <button onclick="buyInvoice()">Buy Invoice</button>
+
+    <p id="result"></p>
+</body>
+</html>
