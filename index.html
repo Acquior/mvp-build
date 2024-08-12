@@ -50,33 +50,32 @@
         }
 
         async function createInvoice() {
-            try {
-                const recipient = document.getElementById('recipient').value;
-                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
-                const tx = await contract.createInvoice(recipient, amount);
-                const receipt = await tx.wait();
+    try {
+        const recipient = document.getElementById('recipient').value;
+        const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+        
+        // Set up event listener before sending the transaction
+        contract.once("InvoiceCreated", (tokenId, recipient, amount, event) => {
+            console.log('Invoice created event received:', { tokenId, recipient, amount });
+            document.getElementById('lastCreatedTokenId').textContent = tokenId.toString();
+            document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
+            
+            // Add the new invoice to the list
+            const invoicesList = document.getElementById('invoicesList');
+            const listItem = document.createElement('li');
+            listItem.textContent = `Token ID: ${tokenId}, Recipient: ${recipient}, Amount: ${ethers.utils.formatEther(amount)} ETH`;
+            invoicesList.appendChild(listItem);
+        });
 
-                // Find the event in the transaction receipt
-                const event = receipt.events.find(event => event.event === 'InvoiceCreated');
-                if (event) {
-                    const tokenId = event.args.tokenId.toString();
-                    console.log('Invoice created with Token ID:', tokenId);
-                    document.getElementById('lastCreatedTokenId').textContent = tokenId;
-                    document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
-                    
-                    // Add the new invoice to the list
-                    const invoicesList = document.getElementById('invoicesList');
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `Token ID: ${tokenId}, Recipient: ${recipient}, Amount: ${ethers.utils.formatEther(amount)} ETH`;
-                    invoicesList.appendChild(listItem);
-                } else {
-                    document.getElementById('result').textContent = 'Invoice created, but token ID not found in event.';
-                }
-            } catch (error) {
-                console.error('Error creating invoice:', error);
-                document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
-            }
-        }
+        const tx = await contract.createInvoice(recipient, amount);
+        await tx.wait();
+        
+        console.log('Transaction confirmed');
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
+    }
+}
 
         async function payInvoice() {
             try {
