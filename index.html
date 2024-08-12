@@ -9,81 +9,98 @@
         let contract;
         let signer;
 
+        const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe'; // Replace with your actual contract address
+        const contractABI = [
+            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+            "function payInvoice(uint256 tokenId) public payable",
+            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+            "function buyInvoice(uint256 tokenId) public payable"
+        ];
+
+        async function checkNetwork() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            if (network.chainId !== 11155111) { // Sepolia chain ID
+                alert('Please switch to Sepolia Test Network in MetaMask');
+                return false;
+            }
+            return true;
+        }
+
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
                     await ethereum.request({ method: 'eth_requestAccounts' });
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
-                    signer = provider.getSigner();
-                    const contractAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138'; // Replace with your deployed contract address
-                    const contractABI = [
-    "constructor()",
-    "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
-    "function payInvoice(uint256 tokenId) public payable",
-    "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
-    "function buyInvoice(uint256 tokenId) public payable"
-
-                    ];
-                    contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    document.getElementById('status').textContent = 'Connected';
+                    if (await checkNetwork()) {
+                        const provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner();
+                        contract = new ethers.Contract(contractAddress, contractABI, signer);
+                        document.getElementById('status').textContent = 'Connected';
+                        console.log('Connected to Sepolia');
+                    }
                 } catch (error) {
-                    console.error(error);
+                    console.error('Failed to connect wallet:', error);
                     document.getElementById('status').textContent = 'Connection failed';
                 }
             } else {
-                document.getElementById('status').textContent = 'Please install MetaMask';
+                alert('Please install MetaMask');
+                document.getElementById('status').textContent = 'MetaMask not detected';
             }
         }
 
         async function createInvoice() {
-            const recipient = document.getElementById('recipient').value;
-            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
             try {
+                const recipient = document.getElementById('recipient').value;
+                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
                 const tx = await contract.createInvoice(recipient, amount);
                 await tx.wait();
+                console.log('Invoice created successfully');
                 document.getElementById('result').textContent = 'Invoice created successfully!';
             } catch (error) {
-                console.error(error);
-                document.getElementById('result').textContent = 'Error creating invoice';
+                console.error('Error creating invoice:', error);
+                document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
             }
         }
 
         async function payInvoice() {
-            const tokenId = document.getElementById('payTokenId').value;
-            const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
             try {
+                const tokenId = document.getElementById('payTokenId').value;
+                const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
                 const tx = await contract.payInvoice(tokenId, { value: amount });
                 await tx.wait();
+                console.log('Invoice paid successfully');
                 document.getElementById('result').textContent = 'Invoice paid successfully!';
             } catch (error) {
-                console.error(error);
-                document.getElementById('result').textContent = 'Error paying invoice';
+                console.error('Error paying invoice:', error);
+                document.getElementById('result').textContent = 'Failed to pay invoice. See console for details.';
             }
         }
 
         async function listInvoiceForSale() {
-            const tokenId = document.getElementById('listTokenId').value;
-            const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
             try {
+                const tokenId = document.getElementById('listTokenId').value;
+                const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
                 const tx = await contract.listInvoiceForSale(tokenId, salePrice);
                 await tx.wait();
+                console.log('Invoice listed for sale successfully');
                 document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
             } catch (error) {
-                console.error(error);
-                document.getElementById('result').textContent = 'Error listing invoice for sale';
+                console.error('Error listing invoice for sale:', error);
+                document.getElementById('result').textContent = 'Failed to list invoice for sale. See console for details.';
             }
         }
 
         async function buyInvoice() {
-            const tokenId = document.getElementById('buyTokenId').value;
-            const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
             try {
+                const tokenId = document.getElementById('buyTokenId').value;
+                const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
                 const tx = await contract.buyInvoice(tokenId, { value: amount });
                 await tx.wait();
+                console.log('Invoice bought successfully');
                 document.getElementById('result').textContent = 'Invoice bought successfully!';
             } catch (error) {
-                console.error(error);
-                document.getElementById('result').textContent = 'Error buying invoice';
+                console.error('Error buying invoice:', error);
+                document.getElementById('result').textContent = 'Failed to buy invoice. See console for details.';
             }
         }
     </script>
