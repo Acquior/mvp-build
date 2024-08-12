@@ -14,7 +14,8 @@
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
             "function payInvoice(uint256 tokenId) public payable",
             "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
-            "function buyInvoice(uint256 tokenId) public payable"
+            "function buyInvoice(uint256 tokenId) public payable",
+            "event InvoiceCreated(uint256 indexed tokenId, address recipient, uint256 amount)"
         ];
 
         async function checkNetwork() {
@@ -53,9 +54,24 @@
                 const recipient = document.getElementById('recipient').value;
                 const amount = ethers.utils.parseEther(document.getElementById('amount').value);
                 const tx = await contract.createInvoice(recipient, amount);
-                await tx.wait();
-                console.log('Invoice created successfully');
-                document.getElementById('result').textContent = 'Invoice created successfully!';
+                const receipt = await tx.wait();
+
+                // Find the event in the transaction receipt
+                const event = receipt.events.find(event => event.event === 'InvoiceCreated');
+                if (event) {
+                    const tokenId = event.args.tokenId.toString();
+                    console.log('Invoice created with Token ID:', tokenId);
+                    document.getElementById('lastCreatedTokenId').textContent = tokenId;
+                    document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
+                    
+                    // Add the new invoice to the list
+                    const invoicesList = document.getElementById('invoicesList');
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Token ID: ${tokenId}, Recipient: ${recipient}, Amount: ${ethers.utils.formatEther(amount)} ETH`;
+                    invoicesList.appendChild(listItem);
+                } else {
+                    document.getElementById('result').textContent = 'Invoice created, but token ID not found in event.';
+                }
             } catch (error) {
                 console.error('Error creating invoice:', error);
                 document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
@@ -114,6 +130,7 @@
     <input id="recipient" type="text" placeholder="Recipient address">
     <input id="amount" type="text" placeholder="Amount in ETH">
     <button onclick="createInvoice()">Create Invoice</button>
+    <p>Last Created Token ID: <span id="lastCreatedTokenId"></span></p>
 
     <h2>Pay Invoice</h2>
     <input id="payTokenId" type="number" placeholder="Token ID">
@@ -131,5 +148,8 @@
     <button onclick="buyInvoice()">Buy Invoice</button>
 
     <p id="result"></p>
+
+    <h2>Created Invoices</h2>
+    <ul id="invoicesList"></ul>
 </body>
 </html>
