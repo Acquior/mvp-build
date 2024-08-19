@@ -9,7 +9,7 @@
         let contract;
         let signer;
 
-        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE'; // Replace with your actual contract address
+        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE';
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
             "function payInvoice(uint256 tokenId) public payable",
@@ -21,7 +21,7 @@
         async function checkNetwork() {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
-            if (network.chainId !== 11155111) { // Sepolia chain ID
+            if (network.chainId !== 11155111) {
                 alert('Please switch to Sepolia Test Network in MetaMask');
                 return false;
             }
@@ -38,6 +38,12 @@
                         contract = new ethers.Contract(contractAddress, contractABI, signer);
                         document.getElementById('status').textContent = 'Connected';
                         console.log('Connected to Sepolia');
+                        
+                        // Set up persistent event listener
+                        contract.on("InvoiceCreated", (tokenId, recipient, amount, event) => {
+                            console.log('Invoice created event received:', { tokenId, recipient, amount });
+                            updateUIAfterInvoiceCreation(tokenId, recipient, amount);
+                        });
                     }
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
@@ -49,33 +55,42 @@
             }
         }
 
-        async function createInvoice() {
-    try {
-        const recipient = document.getElementById('recipient').value;
-        const amount = ethers.utils.parseEther(document.getElementById('amount').value);
-        
-        // Set up event listener before sending the transaction
-        contract.once("InvoiceCreated", (tokenId, recipient, amount, event) => {
-            console.log('Invoice created event received:', { tokenId, recipient, amount });
+        function updateUIAfterInvoiceCreation(tokenId, recipient, amount) {
             document.getElementById('lastCreatedTokenId').textContent = tokenId.toString();
             document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
             
-            // Add the new invoice to the list
             const invoicesList = document.getElementById('invoicesList');
             const listItem = document.createElement('li');
             listItem.textContent = `Token ID: ${tokenId}, Recipient: ${recipient}, Amount: ${ethers.utils.formatEther(amount)} ETH`;
             invoicesList.appendChild(listItem);
-        });
+        }
 
-        const tx = await contract.createInvoice(recipient, amount);
-        await tx.wait();
-        
-        console.log('Transaction confirmed');
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
-    }
-}
+        async function createInvoice() {
+            try {
+                const recipient = document.getElementById('recipient').value;
+                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+                
+                console.log('Sending createInvoice transaction...');
+                const tx = await contract.createInvoice(recipient, amount);
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Transaction confirmed:', receipt);
+
+                // Check if the event was emitted in the transaction receipt
+                const event = receipt.events.find(e => e.event === 'InvoiceCreated');
+                if (event) {
+                    console.log('InvoiceCreated event found in receipt:', event);
+                    const [tokenId, recipientFromEvent, amountFromEvent] = event.args;
+                    updateUIAfterInvoiceCreation(tokenId, recipientFromEvent, amountFromEvent);
+                } else {
+                    console.log('InvoiceCreated event not found in receipt. Updating UI with transaction hash.');
+                    document.getElementById('result').textContent = `Invoice created. Transaction hash: ${receipt.transactionHash}`;
+                }
+            } catch (error) {
+                console.error('Error creating invoice:', error);
+                document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
+            }
+        }
 
         async function payInvoice() {
             try {
