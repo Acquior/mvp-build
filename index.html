@@ -123,18 +123,29 @@ async function payInvoice() {
     }
 }
         async function listInvoiceForSale() {
-            try {
-                const tokenId = document.getElementById('listTokenId').value;
-                const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
-                const tx = await contract.listInvoiceForSale(tokenId, salePrice);
-                await tx.wait();
-                console.log('Invoice listed for sale successfully');
-                document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
-            } catch (error) {
-                console.error('Error listing invoice for sale:', error);
-                document.getElementById('result').textContent = 'Failed to list invoice for sale. See console for details.';
-            }
+    try {
+        const tokenId = document.getElementById('listTokenId').value;
+        const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
+        
+        console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} ETH`);
+
+        // First, check if the invoice is paid (you'll need to add this function to your smart contract)
+        const isPaid = await contract.isInvoicePaid(tokenId);
+        if (isPaid) {
+            throw new Error("This invoice has already been paid and cannot be sold.");
         }
+
+        // If not paid, proceed with listing
+        const tx = await contract.listInvoiceForSale(tokenId, salePrice);
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Invoice listed for sale successfully', receipt);
+        document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
+    } catch (error) {
+        console.error('Error listing invoice for sale:', error);
+        document.getElementById('result').textContent = `Failed to list invoice for sale: ${error.message}`;
+    }
+}
 
         async function buyInvoice() {
             try {
