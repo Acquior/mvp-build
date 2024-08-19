@@ -130,13 +130,6 @@ async function payInvoice() {
         
         console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} ETH`);
 
-        // First, check if the invoice is paid (you'll need to add this function to your smart contract)
-        const isPaid = await contract.isInvoicePaid(tokenId);
-        if (isPaid) {
-            throw new Error("This invoice has already been paid and cannot be sold.");
-        }
-
-        // If not paid, proceed with listing
         const tx = await contract.listInvoiceForSale(tokenId, salePrice);
         console.log('Transaction sent, waiting for confirmation...');
         const receipt = await tx.wait();
@@ -144,7 +137,17 @@ async function payInvoice() {
         document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
     } catch (error) {
         console.error('Error listing invoice for sale:', error);
-        document.getElementById('result').textContent = `Failed to list invoice for sale: ${error.message}`;
+        let errorMessage = 'Failed to list invoice for sale';
+        if (error.message.includes("Only the owner can list the invoice for sale")) {
+            errorMessage = "You are not the owner of this invoice";
+        } else if (error.message.includes("Paid invoices cannot be sold")) {
+            errorMessage = "This invoice has already been paid and cannot be sold";
+        } else if (error.message.includes("Invoice is already listed for sale")) {
+            errorMessage = "This invoice is already listed for sale";
+        } else if (error.message.includes("Sale price must be greater than zero")) {
+            errorMessage = "The sale price must be greater than zero";
+        }
+        document.getElementById('result').textContent = errorMessage;
     }
 }
 
