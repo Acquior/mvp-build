@@ -13,6 +13,7 @@
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
             "function payInvoice(uint256 tokenId) public payable",
+            "function isInvoicePaid(uint256 tokenId) public view returns (bool)",
             "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
             "function buyInvoice(uint256 tokenId) public payable",
             "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
