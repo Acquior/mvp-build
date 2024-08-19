@@ -57,14 +57,14 @@
         }
 
         function updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient) {
-            document.getElementById('lastCreatedTokenId').textContent = tokenId.toString();
-            document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
-            
-            const invoicesList = document.getElementById('invoicesList');
-            const listItem = document.createElement('li');
-            listItem.textContent = `Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH, Issuer: ${issuer}, Recipient: ${recipient}`;
-            invoicesList.appendChild(listItem);
-        }
+    document.getElementById('lastCreatedTokenId').textContent = tokenId.toString();
+    document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
+    
+    const invoicesList = document.getElementById('invoicesList');
+    const listItem = document.createElement('li');
+    listItem.textContent = `Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH, Issuer: ${issuer}, Recipient: ${recipient}`;
+    invoicesList.appendChild(listItem);
+}
 
         async function createInvoice() {
             try {
