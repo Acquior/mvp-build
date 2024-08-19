@@ -92,20 +92,36 @@
             }
         }
 
-        async function payInvoice() {
-            try {
-                const tokenId = document.getElementById('payTokenId').value;
-                const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
-                const tx = await contract.payInvoice(tokenId, { value: amount });
-                await tx.wait();
-                console.log('Invoice paid successfully');
-                document.getElementById('result').textContent = 'Invoice paid successfully!';
-            } catch (error) {
-                console.error('Error paying invoice:', error);
-                document.getElementById('result').textContent = 'Failed to pay invoice. See console for details.';
-            }
-        }
-
+async function payInvoice() {
+    try {
+        const tokenId = document.getElementById('payTokenId').value;
+        const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
+        console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH`);
+        
+        // Get the current gas price
+        const gasPrice = await signer.getGasPrice();
+        console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+        
+        // Estimate the gas limit
+        const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+        console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
+        
+        // Add a buffer to the estimated gas limit
+        const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+        
+        const tx = await contract.payInvoice(tokenId, { 
+            value: amount,
+            gasLimit: gasLimit
+        });
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Invoice paid successfully', receipt);
+        document.getElementById('result').textContent = 'Invoice paid successfully!';
+    } catch (error) {
+        console.error('Error paying invoice:', error);
+        document.getElementById('result').textContent = `Failed to pay invoice: ${error.message}`;
+    }
+}
         async function listInvoiceForSale() {
             try {
                 const tokenId = document.getElementById('listTokenId').value;
