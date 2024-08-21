@@ -264,34 +264,39 @@ function setupAutomaticUpdates() {
         }
 
         async function updateSmallBusinessDashboard(currentAddress) {
-            const table = document.getElementById('smallBusinessTable');
-            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+    const table = document.getElementById('smallBusinessTable');
+    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
 
-            for (let i = 0; i < 100; i++) {
-                try {
-                    const invoice = await contract.invoices(i);
-                    if (invoice[1] === currentAddress) {
-                        const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                        row.insertCell(2).textContent = invoice[2];
-                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                        row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
-                        row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
-                        
-                        const actionCell = row.insertCell(6);
-                        if (!invoice[3] && !invoice[4]) {
-                            const listButton = document.createElement('button');
-                            listButton.textContent = "List for Sale";
-                            listButton.onclick = () => listInvoiceForSale(i);
-                            actionCell.appendChild(listButton);
-                        }
-                    }
-                } catch (error) {
-                    break;
+    // Use a Set to keep track of token IDs we've already added
+    const addedTokens = new Set();
+
+    for (let i = 0; i < 100; i++) {
+        try {
+            const invoice = await contract.invoices(i);
+            if (invoice[1] === currentAddress && !addedTokens.has(i)) {
+                addedTokens.add(i);
+                const row = table.insertRow(-1);
+                row.insertCell(0).textContent = i;
+                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                row.insertCell(2).textContent = truncateAddress(invoice[2]);
+                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
+                row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                
+                const actionCell = row.insertCell(6);
+                if (!invoice[3] && !invoice[4]) {
+                    const listButton = document.createElement('button');
+                    listButton.textContent = "List for Sale";
+                    listButton.onclick = () => listInvoiceForSale(i);
+                    actionCell.appendChild(listButton);
                 }
             }
+        } catch (error) {
+            console.error(`Error fetching invoice ${i}:`, error);
+            break;
         }
+    }
+}
 
         async function updateInvestorDashboard(currentAddress) {
             const table = document.getElementById('investorTable');
