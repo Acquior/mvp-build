@@ -169,27 +169,34 @@
         }
 
         async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await ethereum.request({ method: 'eth_requestAccounts' });
-                    if (await checkNetwork()) {
-                        const provider = new ethers.providers.Web3Provider(window.ethereum);
-                        signer = provider.getSigner();
-                        contract = new ethers.Contract(contractAddress, contractABI, signer);
-                        document.getElementById('status').textContent = 'Connected';
-                        console.log('Connected to Sepolia');
-                        setupEventListeners();
-                        updateDashboards();
-                    }
-                } catch (error) {
-                    console.error('Failed to connect wallet:', error);
-                    document.getElementById('status').textContent = 'Connection failed';
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            await ethereum.request({ method: 'eth_requestAccounts' });
+            if (await checkNetwork()) {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                
+                // Check if the contract is properly initialized
+                if (contract && contract.address) {
+                    document.getElementById('status').textContent = 'Connected';
+                    console.log('Connected to Sepolia');
+                    setupEventListeners();
+                    updateDashboards();
+                    setupAutomaticUpdates();
+                } else {
+                    throw new Error('Failed to initialize contract');
                 }
-            } else {
-                alert('Please install MetaMask');
-                document.getElementById('status').textContent = 'MetaMask not detected';
             }
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+            document.getElementById('status').textContent = 'Connection failed: ' + error.message;
         }
+    } else {
+        alert('Please install MetaMask');
+        document.getElementById('status').textContent = 'MetaMask not detected';
+    }
+}
 
         function setupEventListeners() {
             contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
