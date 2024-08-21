@@ -19,13 +19,31 @@
             "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
         ];
 
+        // This function checks the network that the user is connected to in MetaMask.
+        // It uses the ethers.js library to interact with the Ethereum blockchain.
+        // It creates a new instance of the Web3Provider class, which is used to interact with the Ethereum
+        // blockchain through MetaMask. It then gets the network that the user is connected to and compares it
+        // to the Sepolia chain ID (11155111). If the user is not connected to the Sepolia chain, it displays an
+        // alert message asking the user to switch to the Sepolia Test Network in MetaMask and returns false.
+        // If the user is connected to the Sepolia chain, it returns true.
         async function checkNetwork() {
+            // Create a new instance of the Web3Provider class, which is used to interact with the Ethereum
+            // blockchain through MetaMask.
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+            // Get the network that the user is connected to.
             const network = await provider.getNetwork();
-            if (network.chainId !== 11155111) { // Sepolia chain ID
+
+            // Check if the user is connected to the Sepolia chain. The Sepolia chain ID is 11155111.
+            if (network.chainId !== 11155111) {
+                // If the user is not connected to the Sepolia chain, display an alert message asking the user
+                // to switch to the Sepolia Test Network in MetaMask.
                 alert('Please switch to Sepolia Test Network in MetaMask');
+                // Return false to indicate that the user is not connected to the Sepolia chain.
                 return false;
             }
+
+            // If the user is connected to the Sepolia chain, return true to indicate that the function was successful.
             return true;
         }
 
