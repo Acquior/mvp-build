@@ -3,13 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martech Fin MVP</title>
+    <title>Martech Fin - Invoice Tokenization Platform</title>
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 0.5rem;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 10px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        .container {
+            padding: 20px;
+        }
+        .page {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+        input[type=text], input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result {
+            background-color: #f2f2f2;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Martech Fin - Invoice Tokenization Platform</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showPage('home')">Home</a></li>
+            <li><a href="#" onclick="showPage('small-business')">Small Business</a></li>
+            <li><a href="#" onclick="showPage('big-business')">Big Business</a></li>
+            <li><a href="#" onclick="showPage('investor')">Investor</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div id="home" class="page active">
+            <h2>Welcome to Martech Fin</h2>
+            <p>Connect your wallet to get started:</p>
+            <button onclick="connectWallet()">Connect Wallet</button>
+            <p>Status: <span id="status">Not connected</span></p>
+        </div>
+        <div id="small-business" class="page">
+            <h2>Small Business Dashboard</h2>
+            <h3>Create Invoice</h3>
+            <input id="recipient" type="text" placeholder="Recipient address">
+            <input id="amount" type="text" placeholder="Amount in ETH">
+            <button onclick="createInvoice()">Create Invoice</button>
+            <h3>List Invoice for Sale</h3>
+            <input id="listTokenId" type="number" placeholder="Token ID">
+            <input id="salePrice" type="text" placeholder="Sale Price in ETH">
+            <button onclick="listInvoiceForSale()">List for Sale</button>
+            <div id="small-business-result" class="result"></div>
+        </div>
+        <div id="big-business" class="page">
+            <h2>Big Business Dashboard</h2>
+            <h3>Pay Invoice</h3>
+            <input id="payTokenId" type="number" placeholder="Token ID">
+            <input id="payAmount" type="text" placeholder="Amount in ETH">
+            <button onclick="payInvoice()">Pay Invoice</button>
+            <div id="big-business-result" class="result"></div>
+        </div>
+        <div id="investor" class="page">
+            <h2>Investor Dashboard</h2>
+            <h3>Buy Invoice</h3>
+            <input id="buyTokenId" type="number" placeholder="Token ID">
+            <input id="buyAmount" type="text" placeholder="Amount in ETH">
+            <button onclick="buyInvoice()">Buy Invoice</button>
+            <div id="investor-result" class="result"></div>
+        </div>
+    </div>
     <script>
         let contract;
         let signer;
 
-        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE'; // Make sure this matches your deployed contract address
+        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE';
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
             "function payInvoice(uint256 tokenId) public payable",
@@ -19,31 +136,18 @@
             "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
         ];
 
-        // This function checks the network that the user is connected to in MetaMask.
-        // It uses the ethers.js library to interact with the Ethereum blockchain.
-        // It creates a new instance of the Web3Provider class, which is used to interact with the Ethereum
-        // blockchain through MetaMask. It then gets the network that the user is connected to and compares it
-        // to the Sepolia chain ID (11155111). If the user is not connected to the Sepolia chain, it displays an
-        // alert message asking the user to switch to the Sepolia Test Network in MetaMask and returns false.
-        // If the user is connected to the Sepolia chain, it returns true.
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
         async function checkNetwork() {
-            // Create a new instance of the Web3Provider class, which is used to interact with the Ethereum
-            // blockchain through MetaMask.
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-            // Get the network that the user is connected to.
             const network = await provider.getNetwork();
-
-            // Check if the user is connected to the Sepolia chain. The Sepolia chain ID is 11155111.
             if (network.chainId !== 11155111) {
-                // If the user is not connected to the Sepolia chain, display an alert message asking the user
-                // to switch to the Sepolia Test Network in MetaMask.
                 alert('Please switch to Sepolia Test Network in MetaMask');
-                // Return false to indicate that the user is not connected to the Sepolia chain.
                 return false;
             }
-
-            // If the user is connected to the Sepolia chain, return true to indicate that the function was successful.
             return true;
         }
 
@@ -57,12 +161,6 @@
                         contract = new ethers.Contract(contractAddress, contractABI, signer);
                         document.getElementById('status').textContent = 'Connected';
                         console.log('Connected to Sepolia');
-                        
-                        // Set up persistent event listener
-                        contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient, event) => {
-                            console.log('Invoice created event received:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
-                            updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient);
-                        });
                     }
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
@@ -73,16 +171,6 @@
                 document.getElementById('status').textContent = 'MetaMask not detected';
             }
         }
-
-        function updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient) {
-    document.getElementById('lastCreatedTokenId').textContent = tokenId.toString();
-    document.getElementById('result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
-    
-    const invoicesList = document.getElementById('invoicesList');
-    const listItem = document.createElement('li');
-    listItem.textContent = `Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH, Issuer: ${issuer}, Recipient: ${recipient}`;
-    invoicesList.appendChild(listItem);
-}
 
         async function createInvoice() {
             try {
@@ -95,79 +183,74 @@
                 const receipt = await tx.wait();
                 console.log('Transaction confirmed:', receipt);
 
-                // Check if the event was emitted in the transaction receipt
                 const event = receipt.events.find(e => e.event === 'InvoiceCreated');
                 if (event) {
-                    console.log('InvoiceCreated event found in receipt:', event);
                     const [tokenId, amount, issuer, recipient] = event.args;
-                    updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient);
+                    document.getElementById('small-business-result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
                 } else {
-                    console.log('InvoiceCreated event not found in receipt. Updating UI with transaction hash.');
-                    document.getElementById('result').textContent = `Invoice created. Transaction hash: ${receipt.transactionHash}`;
+                    document.getElementById('small-business-result').textContent = `Invoice created. Transaction hash: ${receipt.transactionHash}`;
                 }
             } catch (error) {
                 console.error('Error creating invoice:', error);
-                document.getElementById('result').textContent = 'Failed to create invoice. See console for details.';
+                document.getElementById('small-business-result').textContent = 'Failed to create invoice. See console for details.';
             }
         }
 
-async function payInvoice() {
-    try {
-        const tokenId = document.getElementById('payTokenId').value;
-        const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
-        console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH`);
-        
-        // Get the current gas price
-        const gasPrice = await signer.getGasPrice();
-        console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
-        
-        // Estimate the gas limit
-        const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-        console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
-        
-        // Add a buffer to the estimated gas limit
-        const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
-        
-        const tx = await contract.payInvoice(tokenId, { 
-            value: amount,
-            gasLimit: gasLimit
-        });
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Invoice paid successfully', receipt);
-        document.getElementById('result').textContent = 'Invoice paid successfully!';
-    } catch (error) {
-        console.error('Error paying invoice:', error);
-        document.getElementById('result').textContent = `Failed to pay invoice: ${error.message}`;
-    }
-}
-        async function listInvoiceForSale() {
-    try {
-        const tokenId = document.getElementById('listTokenId').value;
-        const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
-        
-        console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} ETH`);
-
-        const tx = await contract.listInvoiceForSale(tokenId, salePrice);
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Invoice listed for sale successfully', receipt);
-        document.getElementById('result').textContent = 'Invoice listed for sale successfully!';
-    } catch (error) {
-        console.error('Error listing invoice for sale:', error);
-        let errorMessage = 'Failed to list invoice for sale';
-        if (error.message.includes("Only the owner can list the invoice for sale")) {
-            errorMessage = "You are not the owner of this invoice";
-        } else if (error.message.includes("Paid invoices cannot be sold")) {
-            errorMessage = "This invoice has already been paid and cannot be sold";
-        } else if (error.message.includes("Invoice is already listed for sale")) {
-            errorMessage = "This invoice is already listed for sale";
-        } else if (error.message.includes("Sale price must be greater than zero")) {
-            errorMessage = "The sale price must be greater than zero";
+        async function payInvoice() {
+            try {
+                const tokenId = document.getElementById('payTokenId').value;
+                const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
+                console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH`);
+                
+                const gasPrice = await signer.getGasPrice();
+                console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+                
+                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+                console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
+                
+                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+                
+                const tx = await contract.payInvoice(tokenId, { 
+                    value: amount,
+                    gasLimit: gasLimit
+                });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice paid successfully', receipt);
+                document.getElementById('big-business-result').textContent = 'Invoice paid successfully!';
+            } catch (error) {
+                console.error('Error paying invoice:', error);
+                document.getElementById('big-business-result').textContent = `Failed to pay invoice: ${error.message}`;
+            }
         }
-        document.getElementById('result').textContent = errorMessage;
-    }
-}
+
+        async function listInvoiceForSale() {
+            try {
+                const tokenId = document.getElementById('listTokenId').value;
+                const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
+                
+                console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} ETH`);
+
+                const tx = await contract.listInvoiceForSale(tokenId, salePrice);
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice listed for sale successfully', receipt);
+                document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully!';
+            } catch (error) {
+                console.error('Error listing invoice for sale:', error);
+                let errorMessage = 'Failed to list invoice for sale';
+                if (error.message.includes("Only the owner can list the invoice for sale")) {
+                    errorMessage = "You are not the owner of this invoice";
+                } else if (error.message.includes("Paid invoices cannot be sold")) {
+                    errorMessage = "This invoice has already been paid and cannot be sold";
+                } else if (error.message.includes("Invoice is already listed for sale")) {
+                    errorMessage = "This invoice is already listed for sale";
+                } else if (error.message.includes("Sale price must be greater than zero")) {
+                    errorMessage = "The sale price must be greater than zero";
+                }
+                document.getElementById('small-business-result').textContent = errorMessage;
+            }
+        }
 
         async function buyInvoice() {
             try {
@@ -176,48 +259,12 @@ async function payInvoice() {
                 const tx = await contract.buyInvoice(tokenId, { value: amount });
                 await tx.wait();
                 console.log('Invoice bought successfully');
-                document.getElementById('result').textContent = 'Invoice bought successfully!';
+                document.getElementById('investor-result').textContent = 'Invoice bought successfully!';
             } catch (error) {
                 console.error('Error buying invoice:', error);
-                document.getElementById('result').textContent = 'Failed to buy invoice. See console for details.';
+                document.getElementById('investor-result').textContent = 'Failed to buy invoice. See console for details.';
             }
         }
     </script>
-</head>
-<body>
-    <h1>Martech Fin MVP</h1>
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <p>Status: <span id="status">Not connected</span></p>
-
-
-    <h2>Create Invoice</h2>
-    <input id="recipient" type="text" placeholder="Recipient address">
-    <input id="amount" type="text" placeholder="Amount in ETH">
-    <button onclick="createInvoice()">Create Invoice</button>
-    <p>Last Created Token ID: <span id="lastCreatedTokenId"></span></p>
-
-    <h2>Pay Invoice</h2>
-    <input id="payTokenId" type="number" placeholder="Token ID">
-    <input id="payAmount" type="text" placeholder="Amount in ETH">
-    <button onclick="payInvoice()">Pay Invoice</button>
-
-    <h2>List Invoice for Sale</h2>
-    <input id="listTokenId" type="number" placeholder="Token ID">
-    <input id="salePrice" type="text" placeholder="Sale Price in ETH">
-    <button onclick="listInvoiceForSale()">List for Sale</button>
-
-    <h2>Buy Invoice</h2>
-    <input id="buyTokenId" type="number" placeholder="Token ID">
-    <input id="buyAmount" type="text" placeholder="Amount in ETH">
-    <button onclick="buyInvoice()">Buy Invoice</button>
-
-    <p id="result"></p>
-
-    <div id="existingInvoicesNote" style="background-color: #ffffd0; border: 1px solid #e6e600; padding: 10px; margin-bottom: 20px;">
-        <strong>Note:</strong> Invoices created before the latest update may display incorrect issuer/recipient information. This does not affect new invoices or the functionality of the system.
-      </div>
-      
-    <h2>Created Invoices</h2>
-    <ul id="invoicesList"></ul>
 </body>
 </html>
