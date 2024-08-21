@@ -217,7 +217,17 @@ function setupEventListeners() {
             console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: price.toString() });
             updateDashboards();
         });
-        
+    
+function setupAutomaticUpdates() {
+    console.log('Setting up automatic updates...');
+    setInterval(async () => {
+        if (contract && signer) {
+            console.log('Performing automatic update...');
+            await updateDashboards();
+        }
+    }, 30000); // Update every 30 seconds
+    console.log('Automatic updates set up successfully');
+}      
         console.log('Event listeners set up successfully');
     } else {
         console.error('Failed to set up event listeners: contract or contract.on is undefined');
@@ -512,15 +522,24 @@ async function connectWallet() {
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 contract = new ethers.Contract(contractAddress, contractABI, signer);
-                document.getElementById('status').textContent = 'Connected';
-                console.log('Connected to Sepolia');
-                setupEventListeners();
-                updateDashboards();
-                setupAutomaticUpdates();  // Add this line to set up automatic updates
+                
+                if (contract && contract.address) {
+                    document.getElementById('status').textContent = 'Connected';
+                    console.log('Connected to Sepolia');
+                    setupEventListeners();
+                    updateDashboards();
+                    if (typeof setupAutomaticUpdates === 'function') {
+                        setupAutomaticUpdates();
+                    } else {
+                        console.warn('setupAutomaticUpdates function is not defined');
+                    }
+                } else {
+                    throw new Error('Failed to initialize contract');
+                }
             }
         } catch (error) {
             console.error('Failed to connect wallet:', error);
-            document.getElementById('status').textContent = 'Connection failed';
+            document.getElementById('status').textContent = 'Connection failed: ' + error.message;
         }
     } else {
         alert('Please install MetaMask');
