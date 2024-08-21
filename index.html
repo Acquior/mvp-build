@@ -400,47 +400,117 @@
             return `${address.slice(0, 6)}...${address.slice(-4)}`;
         }
 
-        // Modify the updateSmallBusinessDashboard function to use truncateAddress
-        async function updateSmallBusinessDashboard(currentAddress) {
-            // ... (keep the existing code)
-            row.insertCell(2).textContent = truncateAddress(invoice[2]);
-            // ... (keep the rest of the function as is)
-        }
+        // Update the updateSmallBusinessDashboard function
+async function updateSmallBusinessDashboard(currentAddress) {
+    const table = document.getElementById('smallBusinessTable');
+    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
 
-        // Modify the updateInvestorDashboard function to use truncateAddress
-        async function updateInvestorDashboard(currentAddress) {
-            // ... (keep the existing code)
-            row.insertCell(2).textContent = truncateAddress(invoice[1]);
-            // ... (keep the rest of the function as is)
-        }
-
-        // Modify the updateBigBusinessDashboard function to use truncateAddress
-        async function updateBigBusinessDashboard(currentAddress) {
-            // ... (keep the existing code)
-            row.insertCell(2).textContent = truncateAddress(invoice[1]);
-            // ... (keep the rest of the function as is)
-        }
-
-        // Add this function to handle automatic updates
-        function setupAutomaticUpdates() {
-            setInterval(async () => {
-                if (contract && signer) {
-                    await updateDashboards();
+    for (let i = 0; i < 100; i++) {
+        try {
+            const invoice = await contract.invoices(i);
+            if (invoice[1] === currentAddress) {
+                const row = table.insertRow(-1);
+                row.insertCell(0).textContent = i;
+                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                row.insertCell(2).textContent = truncateAddress(invoice[2]);
+                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
+                row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                
+                const actionCell = row.insertCell(6);
+                if (!invoice[3] && !invoice[4]) {
+                    const listButton = document.createElement('button');
+                    listButton.textContent = "List for Sale";
+                    listButton.onclick = () => listInvoiceForSale(i);
+                    actionCell.appendChild(listButton);
                 }
-            }, 30000); // Update every 30 seconds
+            }
+        } catch (error) {
+            break;
         }
+    }
+}
 
-        // Modify the connectWallet function to set up automatic updates
-        async function connectWallet() {
-            // ... (keep the existing code)
+// Update the updateInvestorDashboard function
+async function updateInvestorDashboard(currentAddress) {
+    const table = document.getElementById('investorTable');
+    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+    for (let i = 0; i < 100; i++) {
+        try {
+            const invoice = await contract.invoices(i);
+            if (invoice[4] && invoice[1] !== currentAddress) {
+                const row = table.insertRow(-1);
+                row.insertCell(0).textContent = i;
+                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                row.insertCell(2).textContent = truncateAddress(invoice[1]);
+                row.insertCell(3).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                
+                const actionCell = row.insertCell(4);
+                const buyButton = document.createElement('button');
+                buyButton.textContent = "Buy";
+                buyButton.onclick = () => buyInvoice(i, invoice[5]);
+                actionCell.appendChild(buyButton);
+            }
+        } catch (error) {
+            break;
+        }
+    }
+}
+
+// Update the updateBigBusinessDashboard function
+async function updateBigBusinessDashboard(currentAddress) {
+    const table = document.getElementById('bigBusinessTable');
+    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+
+    for (let i = 0; i < 100; i++) {
+        try {
+            const invoice = await contract.invoices(i);
+            if (invoice[2] === currentAddress) {
+                const row = table.insertRow(-1);
+                row.insertCell(0).textContent = i;
+                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                row.insertCell(2).textContent = truncateAddress(invoice[1]);
+                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                
+                const actionCell = row.insertCell(4);
+                if (!invoice[3]) {
+                    const payButton = document.createElement('button');
+                    payButton.textContent = "Pay";
+                    payButton.onclick = () => payInvoice(i, invoice[0]);
+                    actionCell.appendChild(payButton);
+                }
+            }
+        } catch (error) {
+            break;
+        }
+    }
+}
+
+// Update the connectWallet function
+async function connectWallet() {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            await ethereum.request({ method: 'eth_requestAccounts' });
             if (await checkNetwork()) {
-                // ... (keep the existing code)
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                document.getElementById('status').textContent = 'Connected';
+                console.log('Connected to Sepolia');
                 setupEventListeners();
                 updateDashboards();
-                setupAutomaticUpdates();
+                setupAutomaticUpdates();  // Add this line to set up automatic updates
             }
-            // ... (keep the rest of the function as is)
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+            document.getElementById('status').textContent = 'Connection failed';
         }
+    } else {
+        alert('Please install MetaMask');
+        document.getElementById('status').textContent = 'MetaMask not detected';
+    }
+}
     </script>
 </body>
 </html>
