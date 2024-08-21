@@ -72,6 +72,23 @@
             padding: 20px;
             margin-top: 20px;
         }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -99,26 +116,20 @@
             <input id="recipient" type="text" placeholder="Recipient address">
             <input id="amount" type="text" placeholder="Amount in ETH">
             <button onclick="createInvoice()">Create Invoice</button>
-            <h3>List Invoice for Sale</h3>
-            <input id="listTokenId" type="number" placeholder="Token ID">
-            <input id="salePrice" type="text" placeholder="Sale Price in ETH">
-            <button onclick="listInvoiceForSale()">List for Sale</button>
             <div id="small-business-result" class="result"></div>
+            <h3>Your Invoices</h3>
+            <table id="smallBusinessTable"></table>
         </div>
         <div id="big-business" class="page">
             <h2>Big Business Dashboard</h2>
-            <h3>Pay Invoice</h3>
-            <input id="payTokenId" type="number" placeholder="Token ID">
-            <input id="payAmount" type="text" placeholder="Amount in ETH">
-            <button onclick="payInvoice()">Pay Invoice</button>
+            <h3>Invoices to Pay</h3>
+            <table id="bigBusinessTable"></table>
             <div id="big-business-result" class="result"></div>
         </div>
         <div id="investor" class="page">
             <h2>Investor Dashboard</h2>
-            <h3>Buy Invoice</h3>
-            <input id="buyTokenId" type="number" placeholder="Token ID">
-            <input id="buyAmount" type="text" placeholder="Amount in ETH">
-            <button onclick="buyInvoice()">Buy Invoice</button>
+            <h3>Invoices Available for Purchase</h3>
+            <table id="investorTable"></table>
             <div id="investor-result" class="result"></div>
         </div>
     </div>
@@ -133,12 +144,18 @@
             "function isInvoicePaid(uint256 tokenId) public view returns (bool)",
             "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
             "function buyInvoice(uint256 tokenId) public payable",
-            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
+            "function invoices(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
+            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)",
+            "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
+            "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
         ];
 
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
+            if (pageId !== 'home' && contract) {
+                updateDashboards();
+            }
         }
 
         async function checkNetwork() {
@@ -161,6 +178,8 @@
                         contract = new ethers.Contract(contractAddress, contractABI, signer);
                         document.getElementById('status').textContent = 'Connected';
                         console.log('Connected to Sepolia');
+                        setupEventListeners();
+                        updateDashboards();
                     }
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
@@ -169,6 +188,114 @@
             } else {
                 alert('Please install MetaMask');
                 document.getElementById('status').textContent = 'MetaMask not detected';
+            }
+        }
+
+        function setupEventListeners() {
+            contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
+                console.log('Invoice created:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
+                updateDashboards();
+            });
+
+            contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
+                console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: salePrice.toString() });
+                updateDashboards();
+            });
+
+            contract.on("InvoiceSold", (tokenId, buyer, price) => {
+                console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: price.toString() });
+                updateDashboards();
+            });
+        }
+
+        async function updateDashboards() {
+            const currentAddress = await signer.getAddress();
+            updateSmallBusinessDashboard(currentAddress);
+            updateInvestorDashboard(currentAddress);
+            updateBigBusinessDashboard(currentAddress);
+        }
+
+        async function updateSmallBusinessDashboard(currentAddress) {
+            const table = document.getElementById('smallBusinessTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[1] === currentAddress) {
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                        row.insertCell(2).textContent = invoice[2];
+                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
+                        row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                        
+                        const actionCell = row.insertCell(6);
+                        if (!invoice[3] && !invoice[4]) {
+                            const listButton = document.createElement('button');
+                            listButton.textContent = "List for Sale";
+                            listButton.onclick = () => listInvoiceForSale(i);
+                            actionCell.appendChild(listButton);
+                        }
+                    }
+                } catch (error) {
+                    break;
+                }
+            }
+        }
+
+        async function updateInvestorDashboard(currentAddress) {
+            const table = document.getElementById('investorTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[4] && invoice[1] !== currentAddress) {
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                        row.insertCell(2).textContent = invoice[1];
+                        row.insertCell(3).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                        
+                        const actionCell = row.insertCell(4);
+                        const buyButton = document.createElement('button');
+                        buyButton.textContent = "Buy";
+                        buyButton.onclick = () => buyInvoice(i, invoice[5]);
+                        actionCell.appendChild(buyButton);
+                    }
+                } catch (error) {
+                    break;
+                }
+            }
+        }
+
+        async function updateBigBusinessDashboard(currentAddress) {
+            const table = document.getElementById('bigBusinessTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[2] === currentAddress) {
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
+                        row.insertCell(2).textContent = invoice[1];
+                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        
+                        const actionCell = row.insertCell(4);
+                        if (!invoice[3]) {
+                            const payButton = document.createElement('button');
+                            payButton.textContent = "Pay";
+                            payButton.onclick = () => payInvoice(i, invoice[0]);
+                            actionCell.appendChild(payButton);
+                        }
+                    }
+                } catch (error) {
+                    break;
+                }
             }
         }
 
@@ -190,16 +317,15 @@
                 } else {
                     document.getElementById('small-business-result').textContent = `Invoice created. Transaction hash: ${receipt.transactionHash}`;
                 }
+                updateDashboards();
             } catch (error) {
                 console.error('Error creating invoice:', error);
                 document.getElementById('small-business-result').textContent = 'Failed to create invoice. See console for details.';
             }
         }
 
-        async function payInvoice() {
+        async function payInvoice(tokenId, amount) {
             try {
-                const tokenId = document.getElementById('payTokenId').value;
-                const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
                 console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH`);
                 
                 const gasPrice = await signer.getGasPrice();
@@ -218,24 +344,26 @@
                 const receipt = await tx.wait();
                 console.log('Invoice paid successfully', receipt);
                 document.getElementById('big-business-result').textContent = 'Invoice paid successfully!';
+                updateDashboards();
             } catch (error) {
                 console.error('Error paying invoice:', error);
                 document.getElementById('big-business-result').textContent = `Failed to pay invoice: ${error.message}`;
             }
         }
-
-        async function listInvoiceForSale() {
+        async function listInvoiceForSale(tokenId) {
             try {
-                const tokenId = document.getElementById('listTokenId').value;
-                const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
+                const salePrice = prompt("Enter the sale price in ETH:");
+                if (salePrice === null) return;
                 
-                console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} ETH`);
+                const salePriceWei = ethers.utils.parseEther(salePrice);
+                console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${salePrice} ETH`);
 
-                const tx = await contract.listInvoiceForSale(tokenId, salePrice);
+                const tx = await contract.listInvoiceForSale(tokenId, salePriceWei);
                 console.log('Transaction sent, waiting for confirmation...');
                 const receipt = await tx.wait();
                 console.log('Invoice listed for sale successfully', receipt);
                 document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully!';
+                updateDashboards();
             } catch (error) {
                 console.error('Error listing invoice for sale:', error);
                 let errorMessage = 'Failed to list invoice for sale';
@@ -252,18 +380,66 @@
             }
         }
 
-        async function buyInvoice() {
+        async function buyInvoice(tokenId, price) {
             try {
-                const tokenId = document.getElementById('buyTokenId').value;
-                const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
-                const tx = await contract.buyInvoice(tokenId, { value: amount });
-                await tx.wait();
-                console.log('Invoice bought successfully');
+                console.log(`Attempting to buy invoice. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(price)} ETH`);
+                const tx = await contract.buyInvoice(tokenId, { value: price });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice bought successfully', receipt);
                 document.getElementById('investor-result').textContent = 'Invoice bought successfully!';
+                updateDashboards();
             } catch (error) {
                 console.error('Error buying invoice:', error);
-                document.getElementById('investor-result').textContent = 'Failed to buy invoice. See console for details.';
+                document.getElementById('investor-result').textContent = `Failed to buy invoice: ${error.message}`;
             }
+        }
+
+        // Add this function to improve user experience
+        function truncateAddress(address) {
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        // Modify the updateSmallBusinessDashboard function to use truncateAddress
+        async function updateSmallBusinessDashboard(currentAddress) {
+            // ... (keep the existing code)
+            row.insertCell(2).textContent = truncateAddress(invoice[2]);
+            // ... (keep the rest of the function as is)
+        }
+
+        // Modify the updateInvestorDashboard function to use truncateAddress
+        async function updateInvestorDashboard(currentAddress) {
+            // ... (keep the existing code)
+            row.insertCell(2).textContent = truncateAddress(invoice[1]);
+            // ... (keep the rest of the function as is)
+        }
+
+        // Modify the updateBigBusinessDashboard function to use truncateAddress
+        async function updateBigBusinessDashboard(currentAddress) {
+            // ... (keep the existing code)
+            row.insertCell(2).textContent = truncateAddress(invoice[1]);
+            // ... (keep the rest of the function as is)
+        }
+
+        // Add this function to handle automatic updates
+        function setupAutomaticUpdates() {
+            setInterval(async () => {
+                if (contract && signer) {
+                    await updateDashboards();
+                }
+            }, 30000); // Update every 30 seconds
+        }
+
+        // Modify the connectWallet function to set up automatic updates
+        async function connectWallet() {
+            // ... (keep the existing code)
+            if (await checkNetwork()) {
+                // ... (keep the existing code)
+                setupEventListeners();
+                updateDashboards();
+                setupAutomaticUpdates();
+            }
+            // ... (keep the rest of the function as is)
         }
     </script>
 </body>
