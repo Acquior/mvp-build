@@ -189,6 +189,7 @@ async function payInvoice() {
     <button onclick="connectWallet()">Connect Wallet</button>
     <p>Status: <span id="status">Not connected</span></p>
 
+
     <h2>Create Invoice</h2>
     <input id="recipient" type="text" placeholder="Recipient address">
     <input id="amount" type="text" placeholder="Amount in ETH">
@@ -212,6 +213,10 @@ async function payInvoice() {
 
     <p id="result"></p>
 
+    <div id="existingInvoicesNote" style="background-color: #ffffd0; border: 1px solid #e6e600; padding: 10px; margin-bottom: 20px;">
+        <strong>Note:</strong> Invoices created before the latest update may display incorrect issuer/recipient information. This does not affect new invoices or the functionality of the system.
+      </div>
+      
     <h2>Created Invoices</h2>
     <ul id="invoicesList"></ul>
 </body>
