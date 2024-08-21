@@ -198,22 +198,31 @@
     }
 }
 
-        function setupEventListeners() {
-            contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
-                console.log('Invoice created:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
-                updateDashboards();
-            });
+function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    console.log('Contract object:', contract);
+    
+    if (contract && contract.on) {
+        contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
+            console.log('Invoice created:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
+            updateDashboards();
+        });
 
-            contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
-                console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: salePrice.toString() });
-                updateDashboards();
-            });
+        contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
+            console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: salePrice.toString() });
+            updateDashboards();
+        });
 
-            contract.on("InvoiceSold", (tokenId, buyer, price) => {
-                console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: price.toString() });
-                updateDashboards();
-            });
-        }
+        contract.on("InvoiceSold", (tokenId, buyer, price) => {
+            console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: price.toString() });
+            updateDashboards();
+        });
+        
+        console.log('Event listeners set up successfully');
+    } else {
+        console.error('Failed to set up event listeners: contract or contract.on is undefined');
+    }
+}
 
         async function updateDashboards() {
             const currentAddress = await signer.getAddress();
