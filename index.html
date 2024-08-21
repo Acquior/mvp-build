@@ -149,7 +149,24 @@
             "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
             "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
         ];
+        function clearLogAndReset() {
+    console.clear();
+    console.log('Logs cleared and UI reset');
 
+    document.getElementById('status').textContent = 'Not connected';
+    document.getElementById('small-business-result').textContent = '';
+    document.getElementById('big-business-result').textContent = '';
+    document.getElementById('investor-result').textContent = '';
+
+    document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+    document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+    document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+    contract = null;
+    signer = null;
+}
+// Add this line to call the function when the page loads
+window.addEventListener('load', clearLogAndReset);
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -169,6 +186,8 @@
         }
 
         async function connectWallet() {
+    clearLogAndReset(); // Clear logs and reset UI before attempting to connect
+
     if (typeof window.ethereum !== 'undefined') {
         try {
             await ethereum.request({ method: 'eth_requestAccounts' });
@@ -177,13 +196,16 @@
                 signer = provider.getSigner();
                 contract = new ethers.Contract(contractAddress, contractABI, signer);
                 
-                // Check if the contract is properly initialized
                 if (contract && contract.address) {
                     document.getElementById('status').textContent = 'Connected';
                     console.log('Connected to Sepolia');
                     setupEventListeners();
                     updateDashboards();
-                    setupAutomaticUpdates();
+                    if (typeof setupAutomaticUpdates === 'function') {
+                        setupAutomaticUpdates();
+                    } else {
+                        console.warn('setupAutomaticUpdates function is not defined');
+                    }
                 } else {
                     throw new Error('Failed to initialize contract');
                 }
