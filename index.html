@@ -114,7 +114,7 @@
             <h2>Small Business Dashboard</h2>
             <h3>Create Invoice</h3>
             <input id="recipient" type="text" placeholder="Recipient address">
-            <input id="amount" type="text" placeholder="Amount in ETH">
+            <input id="amount" type="number" placeholder="Amount in Rands">
             <button onclick="createInvoice()">Create Invoice</button>
             <div id="small-business-result" class="result"></div>
             <h3>Your Invoices</h3>
@@ -149,30 +149,27 @@
             "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
             "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
         ];
-        function clearLogAndReset() {
-    console.clear();
-    console.log('Logs cleared and UI reset');
 
-    document.getElementById('status').textContent = 'Not connected';
-    document.getElementById('small-business-result').textContent = '';
-    document.getElementById('big-business-result').textContent = '';
-    document.getElementById('investor-result').textContent = '';
+        const ETH_TO_RAND = 1000000; // 1 ETH = 1,000,000 Rand
 
-    document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
-    document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
-    document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
-
-    contract = null;
-    signer = null;
-}
-// Add this line to call the function when the page loads
-window.addEventListener('load', clearLogAndReset);
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             if (pageId !== 'home' && contract) {
                 updateDashboards();
             }
+        }
+
+        function ethToRand(ethAmount) {
+            return ethers.utils.formatEther(ethAmount) * ETH_TO_RAND;
+        }
+
+        function randToEth(randAmount) {
+            return ethers.utils.parseEther((randAmount / ETH_TO_RAND).toString());
+        }
+
+        function formatRand(amount) {
+            return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
         }
 
         async function checkNetwork() {
@@ -186,75 +183,45 @@ window.addEventListener('load', clearLogAndReset);
         }
 
         async function connectWallet() {
-    clearLogAndReset(); // Clear logs and reset UI before attempting to connect
-
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            await ethereum.request({ method: 'eth_requestAccounts' });
-            if (await checkNetwork()) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                contract = new ethers.Contract(contractAddress, contractABI, signer);
-                
-                if (contract && contract.address) {
-                    document.getElementById('status').textContent = 'Connected';
-                    console.log('Connected to Sepolia');
-                    setupEventListeners();
-                    updateDashboards();
-                    if (typeof setupAutomaticUpdates === 'function') {
-                        setupAutomaticUpdates();
-                    } else {
-                        console.warn('setupAutomaticUpdates function is not defined');
+            clearLogAndReset();
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    if (await checkNetwork()) {
+                        const provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner();
+                        contract = new ethers.Contract(contractAddress, contractABI, signer);
+                        document.getElementById('status').textContent = 'Connected';
+                        console.log('Connected to Sepolia');
+                        setupEventListeners();
+                        updateDashboards();
                     }
-                } else {
-                    throw new Error('Failed to initialize contract');
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    document.getElementById('status').textContent = 'Connection failed';
                 }
+            } else {
+                alert('Please install MetaMask');
+                document.getElementById('status').textContent = 'MetaMask not detected';
             }
-        } catch (error) {
-            console.error('Failed to connect wallet:', error);
-            document.getElementById('status').textContent = 'Connection failed: ' + error.message;
         }
-    } else {
-        alert('Please install MetaMask');
-        document.getElementById('status').textContent = 'MetaMask not detected';
-    }
-}
 
-function setupEventListeners() {
-    console.log('Setting up event listeners...');
-    console.log('Contract object:', contract);
-    
-    if (contract && contract.on) {
-        contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
-            console.log('Invoice created:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
-            updateDashboards();
-        });
+        function setupEventListeners() {
+            contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
+                console.log('Invoice created:', { tokenId: tokenId.toString(), amount: ethToRand(amount), issuer, recipient });
+                updateDashboards();
+            });
 
-        contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
-            console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: salePrice.toString() });
-            updateDashboards();
-        });
+            contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
+                console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: ethToRand(salePrice) });
+                updateDashboards();
+            });
 
-        contract.on("InvoiceSold", (tokenId, buyer, price) => {
-            console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: price.toString() });
-            updateDashboards();
-        });
-    
-function setupAutomaticUpdates() {
-    console.log('Setting up automatic updates...');
-    setInterval(async () => {
-        if (contract && signer) {
-            console.log('Performing automatic update...');
-            await updateDashboards();
+            contract.on("InvoiceSold", (tokenId, buyer, price) => {
+                console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: ethToRand(price) });
+                updateDashboards();
+            });
         }
-    }, 30000); // Update every 30 seconds
-    console.log('Automatic updates set up successfully');
-}      
-        console.log('Event listeners set up successfully');
-    } else {
-        console.error('Failed to set up event listeners: contract or contract.on is undefined');
-    }
-}
 
         async function updateDashboards() {
             const currentAddress = await signer.getAddress();
@@ -264,39 +231,38 @@ function setupAutomaticUpdates() {
         }
 
         async function updateSmallBusinessDashboard(currentAddress) {
-    const table = document.getElementById('smallBusinessTable');
-    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+            const table = document.getElementById('smallBusinessTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
 
-    // Use a Set to keep track of token IDs we've already added
-    const addedTokens = new Set();
+            const addedTokens = new Set();
 
-    for (let i = 0; i < 100; i++) {
-        try {
-            const invoice = await contract.invoices(i);
-            if (invoice[1] === currentAddress && !addedTokens.has(i)) {
-                addedTokens.add(i);
-                const row = table.insertRow(-1);
-                row.insertCell(0).textContent = i;
-                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                row.insertCell(2).textContent = truncateAddress(invoice[2]);
-                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
-                row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
-                
-                const actionCell = row.insertCell(6);
-                if (!invoice[3] && !invoice[4]) {
-                    const listButton = document.createElement('button');
-                    listButton.textContent = "List for Sale";
-                    listButton.onclick = () => listInvoiceForSale(i);
-                    actionCell.appendChild(listButton);
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[1] === currentAddress && !addedTokens.has(i)) {
+                        addedTokens.add(i);
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[2]);
+                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
+                        row.insertCell(5).textContent = formatRand(ethToRand(invoice[5]));
+                        
+                        const actionCell = row.insertCell(6);
+                        if (!invoice[3] && !invoice[4]) {
+                            const listButton = document.createElement('button');
+                            listButton.textContent = "List for Sale";
+                            listButton.onclick = () => listInvoiceForSale(i);
+                            actionCell.appendChild(listButton);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching invoice ${i}:`, error);
+                    break;
                 }
             }
-        } catch (error) {
-            console.error(`Error fetching invoice ${i}:`, error);
-            break;
         }
-    }
-}
 
         async function updateInvestorDashboard(currentAddress) {
             const table = document.getElementById('investorTable');
@@ -308,9 +274,9 @@ function setupAutomaticUpdates() {
                     if (invoice[4] && invoice[1] !== currentAddress) {
                         const row = table.insertRow(-1);
                         row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                        row.insertCell(2).textContent = invoice[1];
-                        row.insertCell(3).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
+                        row.insertCell(3).textContent = formatRand(ethToRand(invoice[5]));
                         
                         const actionCell = row.insertCell(4);
                         const buyButton = document.createElement('button');
@@ -334,8 +300,8 @@ function setupAutomaticUpdates() {
                     if (invoice[2] === currentAddress) {
                         const row = table.insertRow(-1);
                         row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                        row.insertCell(2).textContent = invoice[1];
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
                         row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
                         
                         const actionCell = row.insertCell(4);
@@ -355,10 +321,11 @@ function setupAutomaticUpdates() {
         async function createInvoice() {
             try {
                 const recipient = document.getElementById('recipient').value;
-                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+                const amountInRand = document.getElementById('amount').value;
+                const amountInEth = randToEth(amountInRand);
                 
                 console.log('Sending createInvoice transaction...');
-                const tx = await contract.createInvoice(recipient, amount);
+                const tx = await contract.createInvoice(recipient, amountInEth);
                 console.log('Transaction sent, waiting for confirmation...');
                 const receipt = await tx.wait();
                 console.log('Transaction confirmed:', receipt);
@@ -378,201 +345,99 @@ function setupAutomaticUpdates() {
         }
 
         async function payInvoice(tokenId, amount) {
-            try {
-                console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} ETH`);
-                
-                const gasPrice = await signer.getGasPrice();
-                console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
-                
-                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-                console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
-                
-                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
-                
-                const tx = await contract.payInvoice(tokenId, { 
-                    value: amount,
-                    gasLimit: gasLimit
-                });
-                console.log('Transaction sent, waiting for confirmation...');
-                const receipt = await tx.wait();
-                console.log('Invoice paid successfully', receipt);
-                document.getElementById('big-business-result').textContent = 'Invoice paid successfully!';
-                updateDashboards();
-            } catch (error) {
-                console.error('Error paying invoice:', error);
-                document.getElementById('big-business-result').textContent = `Failed to pay invoice: ${error.message}`;
-            }
-        }
-        async function listInvoiceForSale(tokenId) {
-            try {
-                const salePrice = prompt("Enter the sale price in ETH:");
-                if (salePrice === null) return;
-                
-                const salePriceWei = ethers.utils.parseEther(salePrice);
-                console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${salePrice} ETH`);
-
-                const tx = await contract.listInvoiceForSale(tokenId, salePriceWei);
-                console.log('Transaction sent, waiting for confirmation...');
-                const receipt = await tx.wait();
-                console.log('Invoice listed for sale successfully', receipt);
-                document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully!';
-                updateDashboards();
-            } catch (error) {
-                console.error('Error listing invoice for sale:', error);
-                let errorMessage = 'Failed to list invoice for sale';
-                if (error.message.includes("Only the owner can list the invoice for sale")) {
-                    errorMessage = "You are not the owner of this invoice";
-                } else if (error.message.includes("Paid invoices cannot be sold")) {
-                    errorMessage = "This invoice has already been paid and cannot be sold";
-                } else if (error.message.includes("Invoice is already listed for sale")) {
-                    errorMessage = "This invoice is already listed for sale";
-                } else if (error.message.includes("Sale price must be greater than zero")) {
-                    errorMessage = "The sale price must be greater than zero";
-                }
-                document.getElementById('small-business-result').textContent = errorMessage;
-            }
-        }
-
-        async function buyInvoice(tokenId, price) {
-            try {
-                console.log(`Attempting to buy invoice. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(price)} ETH`);
-                const tx = await contract.buyInvoice(tokenId, { value: price });
-                console.log('Transaction sent, waiting for confirmation...');
-                const receipt = await tx.wait();
-                console.log('Invoice bought successfully', receipt);
-                document.getElementById('investor-result').textContent = 'Invoice bought successfully!';
-                updateDashboards();
-            } catch (error) {
-                console.error('Error buying invoice:', error);
-                document.getElementById('investor-result').textContent = `Failed to buy invoice: ${error.message}`;
-            }
-        }
-
-        // Add this function to improve user experience
-        function truncateAddress(address) {
-            return `${address.slice(0, 6)}...${address.slice(-4)}`;
-        }
-
-        // Update the updateSmallBusinessDashboard function
-async function updateSmallBusinessDashboard(currentAddress) {
-    const table = document.getElementById('smallBusinessTable');
-    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
-
-    for (let i = 0; i < 100; i++) {
-        try {
-            const invoice = await contract.invoices(i);
-            if (invoice[1] === currentAddress) {
-                const row = table.insertRow(-1);
-                row.insertCell(0).textContent = i;
-                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                row.insertCell(2).textContent = truncateAddress(invoice[2]);
-                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
-                row.insertCell(5).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
-                
-                const actionCell = row.insertCell(6);
-                if (!invoice[3] && !invoice[4]) {
-                    const listButton = document.createElement('button');
-                    listButton.textContent = "List for Sale";
-                    listButton.onclick = () => listInvoiceForSale(i);
-                    actionCell.appendChild(listButton);
-                }
-            }
-        } catch (error) {
-            break;
-        }
+    try {
+        console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${formatRand(ethToRand(amount))}`);
+        
+        const gasPrice = await signer.getGasPrice();
+        console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+        
+        const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+        console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
+        
+        const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+        
+        const tx = await contract.payInvoice(tokenId, { 
+            value: amount,
+            gasLimit: gasLimit
+        });
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Invoice paid successfully', receipt);
+        document.getElementById('big-business-result').textContent = 'Invoice paid successfully!';
+        updateDashboards();
+    } catch (error) {
+        console.error('Error paying invoice:', error);
+        document.getElementById('big-business-result').textContent = `Failed to pay invoice: ${error.message}`;
     }
 }
 
-// Update the updateInvestorDashboard function
-async function updateInvestorDashboard(currentAddress) {
-    const table = document.getElementById('investorTable');
-    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+async function listInvoiceForSale(tokenId) {
+    try {
+        const salePriceInRand = prompt("Enter the sale price in Rand:");
+        if (salePriceInRand === null) return;
+        
+        const salePriceInEth = randToEth(salePriceInRand);
+        console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${formatRand(salePriceInRand)}`);
 
-    for (let i = 0; i < 100; i++) {
-        try {
-            const invoice = await contract.invoices(i);
-            if (invoice[4] && invoice[1] !== currentAddress) {
-                const row = table.insertRow(-1);
-                row.insertCell(0).textContent = i;
-                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                row.insertCell(3).textContent = ethers.utils.formatEther(invoice[5]) + " ETH";
-                
-                const actionCell = row.insertCell(4);
-                const buyButton = document.createElement('button');
-                buyButton.textContent = "Buy";
-                buyButton.onclick = () => buyInvoice(i, invoice[5]);
-                actionCell.appendChild(buyButton);
-            }
-        } catch (error) {
-            break;
+        const tx = await contract.listInvoiceForSale(tokenId, salePriceInEth);
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Invoice listed for sale successfully', receipt);
+        document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully!';
+        updateDashboards();
+    } catch (error) {
+        console.error('Error listing invoice for sale:', error);
+        let errorMessage = 'Failed to list invoice for sale';
+        if (error.message.includes("Only the owner can list the invoice for sale")) {
+            errorMessage = "You are not the owner of this invoice";
+        } else if (error.message.includes("Paid invoices cannot be sold")) {
+            errorMessage = "This invoice has already been paid and cannot be sold";
+        } else if (error.message.includes("Invoice is already listed for sale")) {
+            errorMessage = "This invoice is already listed for sale";
+        } else if (error.message.includes("Sale price must be greater than zero")) {
+            errorMessage = "The sale price must be greater than zero";
         }
+        document.getElementById('small-business-result').textContent = errorMessage;
     }
 }
 
-// Update the updateBigBusinessDashboard function
-async function updateBigBusinessDashboard(currentAddress) {
-    const table = document.getElementById('bigBusinessTable');
-    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
-
-    for (let i = 0; i < 100; i++) {
-        try {
-            const invoice = await contract.invoices(i);
-            if (invoice[2] === currentAddress) {
-                const row = table.insertRow(-1);
-                row.insertCell(0).textContent = i;
-                row.insertCell(1).textContent = ethers.utils.formatEther(invoice[0]) + " ETH";
-                row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                
-                const actionCell = row.insertCell(4);
-                if (!invoice[3]) {
-                    const payButton = document.createElement('button');
-                    payButton.textContent = "Pay";
-                    payButton.onclick = () => payInvoice(i, invoice[0]);
-                    actionCell.appendChild(payButton);
-                }
-            }
-        } catch (error) {
-            break;
-        }
+async function buyInvoice(tokenId, price) {
+    try {
+        console.log(`Attempting to buy invoice. Token ID: ${tokenId}, Price: ${formatRand(ethToRand(price))}`);
+        const tx = await contract.buyInvoice(tokenId, { value: price });
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Invoice bought successfully', receipt);
+        document.getElementById('investor-result').textContent = 'Invoice bought successfully!';
+        updateDashboards();
+    } catch (error) {
+        console.error('Error buying invoice:', error);
+        document.getElementById('investor-result').textContent = `Failed to buy invoice: ${error.message}`;
     }
 }
 
-// Update the connectWallet function
-async function connectWallet() {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            await ethereum.request({ method: 'eth_requestAccounts' });
-            if (await checkNetwork()) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                contract = new ethers.Contract(contractAddress, contractABI, signer);
-                
-                if (contract && contract.address) {
-                    document.getElementById('status').textContent = 'Connected';
-                    console.log('Connected to Sepolia');
-                    setupEventListeners();
-                    updateDashboards();
-                    if (typeof setupAutomaticUpdates === 'function') {
-                        setupAutomaticUpdates();
-                    } else {
-                        console.warn('setupAutomaticUpdates function is not defined');
-                    }
-                } else {
-                    throw new Error('Failed to initialize contract');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to connect wallet:', error);
-            document.getElementById('status').textContent = 'Connection failed: ' + error.message;
-        }
-    } else {
-        alert('Please install MetaMask');
-        document.getElementById('status').textContent = 'MetaMask not detected';
-    }
+function truncateAddress(address) {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
+
+function clearLogAndReset() {
+    console.clear();
+    console.log('Logs cleared and UI reset');
+
+    document.getElementById('status').textContent = 'Not connected';
+    document.getElementById('small-business-result').textContent = '';
+    document.getElementById('big-business-result').textContent = '';
+    document.getElementById('investor-result').textContent = '';
+
+    document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+    document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+    document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+    contract = null;
+    signer = null;
+}
+
+window.addEventListener('load', clearLogAndReset);
     </script>
 </body>
 </html>
