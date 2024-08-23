@@ -88,7 +88,7 @@ button {
     width: 100%;
 }
 
-#statusMessage {
+#small-business-result, #investor-result, #big-business-result {
     margin-top: 10px;
     padding: 10px;
     border-radius: 4px;
@@ -96,38 +96,19 @@ button {
     color: #2e7d32;
 }
 
-#invoicesList, #availableInvoices, #invoicesToPay, #recentTransactions {
+table {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
 }
 
-#invoicesList .invoice, #availableInvoices .invoice, #invoicesToPay .invoice, #recentTransactions .transaction {
-    background-color: white;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
 }
 
-footer {
-    background-color: white;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    border-top: 1px solid #e0e0e0;
-}
-
-footer nav {
-    display: flex;
-    justify-content: space-around;
-}
-
-footer nav a {
-    color: #333;
-    text-decoration: none;
-    padding: 10px;
-    text-align: center;
-}
-
-footer nav a.active {
-    color: #4CAF50;
+th {
+    background-color: #4CAF50;
+    color: white;
 }
