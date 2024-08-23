@@ -11,22 +11,72 @@
         <img src="logo.png" alt="Acquior Technology Logo">
         <button id="connectWallet">Connect Wallet</button>
     </header>
-    <nav>
+
+    <nav id="mainNav">
         <ul>
-            <li><a href="#home">Home</a></li>
+            <li><a href="#home" class="active">Home</a></li>
             <li><a href="#small-business">Small Business</a></li>
             <li><a href="#investor">Investor</a></li>
             <li><a href="#big-business">Big Business</a></li>
         </ul>
     </nav>
-    <main id="home">
-        <!-- Content will be added here -->
+
+    <main>
+        <section id="home" class="page active">
+            <div class="card">
+                <h2>Small Business</h2>
+                <p>Empowering small businesses with financial solutions tailored to their needs.</p>
+            </div>
+            <div class="card">
+                <h2>Investor</h2>
+                <p>Comprehensive tools and insights for savvy investors.</p>
+            </div>
+            <div class="card">
+                <h2>Big Business</h2>
+                <p>Robust financial solutions for large enterprises.</p>
+            </div>
+        </section>
+
+        <section id="small-business" class="page">
+            <h2>Create Invoice</h2>
+            <form id="createInvoiceForm">
+                <input type="text" id="recipient" placeholder="Recipient Address">
+                <input type="number" id="amount" placeholder="Amount in Rands">
+                <button type="submit">Create Invoice</button>
+            </form>
+            <div id="statusMessage"></div>
+            <h3>Your Invoices</h3>
+            <div id="invoicesList"></div>
+        </section>
+
+        <section id="investor" class="page">
+            <input type="text" id="searchInvoices" placeholder="Search by type or amount">
+            <div id="availableInvoices"></div>
+            <div id="investmentSummary" class="card">
+                <h3>Total Invested: <span id="totalInvested">R0</span></h3>
+                <p>Invoices Held: <span id="invoicesHeld">0</span></p>
+            </div>
+        </section>
+
+        <section id="big-business" class="page">
+            <h2>Invoices to Pay</h2>
+            <input type="text" id="searchInvoicesToPay" placeholder="Search Invoices">
+            <div id="invoicesToPay"></div>
+            <h3>Recent Transactions</h3>
+            <div id="recentTransactions"></div>
+        </section>
     </main>
+
     <footer>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
-        <a href="#terms">Terms of Service</a>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#invoices">Invoices</a>
+            <a href="#investments">Investments</a>
+            <a href="#profile">Profile</a>
+        </nav>
     </footer>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
