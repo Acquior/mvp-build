@@ -5,6 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Martech Fin Home</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <script>
+        let contract;
+        let signer;
+
+        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE';
+        const contractABI = [
+            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+            "function payInvoice(uint256 tokenId) public payable",
+            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+            "function buyInvoice(uint256 tokenId) public payable",
+            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
+        ];
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    
+                    const address = await signer.getAddress();
+                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    
+                    console.log('Wallet connected');
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                }
+            } else {
+                alert('Please install MetaMask!');
+            }
+        }
+
+        function navigateTo(page) {
+            window.location.href = `${page}.html`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.connect-wallet').addEventListener('click', connectWallet);
+            
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = e.currentTarget.querySelector('h2').textContent.toLowerCase().replace(' ', '-');
+                    navigateTo(page);
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <header>
