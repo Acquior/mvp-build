@@ -1,114 +1,43 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f0f0f0;
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    header .logo {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .connect-wallet {
+        width: 100%;
+    }
+
+    .card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .card .icon {
+        margin-bottom: 10px;
+    }
+
+    .card .icon img {
+        margin-right: 0;
+    }
+
+    footer {
+        display: flex;
+        flex-direction: column;
+    }
+
+    footer a {
+        margin: 5px 0;
+    }
 }
 
-header {
-    background-color: white;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-header img {
-    height: 30px;
-}
-
-#connectWallet {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-nav ul {
-    list-style-type: none;
-    padding: 0;
-    display: flex;
-    justify-content: space-around;
-    background-color: white;
-    margin: 0;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-nav ul li a {
-    color: #333;
-    text-decoration: none;
-    padding: 10px;
-    display: block;
-}
-
-nav ul li a.active {
-    color: #4CAF50;
-    border-bottom: 2px solid #4CAF50;
-}
-
-main {
-    padding: 20px;
-}
-
-.page {
-    display: none;
-}
-
-.page.active {
-    display: block;
-}
-
-.card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    width: 100%;
-}
-
-#small-business-result, #investor-result, #big-business-result {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 4px;
-    background-color: #e8f5e9;
-    color: #2e7d32;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-
-th {
-    background-color: #4CAF50;
-    color: white;
+/* Add this to ensure the logo doesn't overflow on very small screens */
+header .logo img {
+    max-width: 100%;
+    height: auto;
 }
