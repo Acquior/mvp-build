@@ -1,163 +1,134 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Small Business Dashboard</title>
-    <link rel="stylesheet" href="small-business-styles.css">
-    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
-    <script>
-        let contract;
-        let signer;
+let contract;
+let signer;
 
-        const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe';
-        const contractABI = [
-            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
-            "function payInvoice(uint256 tokenId) public payable",
-            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
-            "function buyInvoice(uint256 tokenId) public payable",
-            "function getInvoiceDetails(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
-            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
-        ];
+const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe';
+const contractABI = [
+    "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+    "function payInvoice(uint256 tokenId) public payable",
+    "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+    "function buyInvoice(uint256 tokenId) public payable",
+    "function getInvoiceDetails(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
+    "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
+];
 
-        async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await ethereum.request({ method: 'eth_requestAccounts' });
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
-                    signer = provider.getSigner();
-                    contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    console.log('Wallet connected');
-                    updateStatusMessage('Wallet connected successfully');
-                    fetchInvoices();
-                } catch (error) {
-                    console.error('Failed to connect wallet:', error);
-                    updateStatusMessage('Failed to connect wallet. Please try again.');
+async function connectWallet() {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            await ethereum.request({ method: 'eth_requestAccounts' });
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            console.log('Wallet connected');
+            updateStatusMessage('Wallet connected successfully');
+            await fetchInvoices();
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+            updateStatusMessage('Failed to connect wallet. Please try again.');
+        }
+    } else {
+        updateStatusMessage('Please install MetaMask!');
+    }
+}
+
+async function createInvoice(event) {
+    event.preventDefault();
+    const recipient = document.getElementById('recipient-address').value;
+    const amountRands = document.getElementById('amount-rands').value;
+    const amountWei = ethers.utils.parseEther(amountRands);
+
+    try {
+        updateStatusMessage('Creating invoice... Please wait.');
+        const tx = await contract.createInvoice(recipient, amountWei);
+        console.log('Transaction sent:', tx.hash);
+        const receipt = await tx.wait();
+        console.log('Invoice created:', receipt);
+        updateStatusMessage('Invoice created successfully!');
+        await fetchInvoices();
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        updateStatusMessage('Error creating invoice. Please try again.');
+    }
+}
+
+function updateStatusMessage(message) {
+    document.querySelector('.status-message').textContent = message;
+}
+
+async function fetchInvoices() {
+    console.log('Fetching invoices...');
+    const invoicesContainer = document.querySelector('.invoice-list');
+    invoicesContainer.innerHTML = '<h2>Your Invoices</h2>';
+
+    try {
+        const userAddress = await signer.getAddress();
+        console.log('User address:', userAddress);
+        
+        let tokenId = 0;
+        let foundInvoices = false;
+
+        while (tokenId < 100) { // Limit to prevent infinite loop
+            try {
+                console.log('Fetching invoice details for token ID:', tokenId);
+                const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
+                console.log('Invoice details:', { tokenId, amount, issuer, recipient, paid, forSale, salePrice });
+                
+                if (issuer.toLowerCase() === userAddress.toLowerCase()) {
+                    console.log('Found invoice for current user');
+                    const invoiceCard = createInvoiceCard(tokenId, amount, paid, forSale, salePrice);
+                    invoicesContainer.appendChild(invoiceCard);
+                    foundInvoices = true;
                 }
-            } else {
-                updateStatusMessage('Please install MetaMask!');
-            }
-        }
-
-        async function createInvoice(event) {
-            event.preventDefault();
-            const recipient = document.getElementById('recipient-address').value;
-            const amountRands = document.getElementById('amount-rands').value;
-            const amountWei = ethers.utils.parseEther(amountRands);
-
-            try {
-                const tx = await contract.createInvoice(recipient, amountWei);
-                updateStatusMessage('Creating invoice... Please wait.');
-                const receipt = await tx.wait();
-                console.log('Invoice created:', receipt);
-                updateStatusMessage('Invoice created successfully!');
-                fetchInvoices();
+                tokenId++;
             } catch (error) {
-                console.error('Error creating invoice:', error);
-                updateStatusMessage('Error creating invoice. Please try again.');
+                console.log('Error fetching invoice details for token ID', tokenId, ':', error.message);
+                break; // Exit the loop if we encounter an error (likely means we've reached the end of valid token IDs)
             }
         }
 
-        function updateStatusMessage(message) {
-            document.querySelector('.status-message').textContent = message;
+        if (!foundInvoices) {
+            invoicesContainer.innerHTML += '<p>No invoices found.</p>';
         }
+    } catch (error) {
+        console.error('Error fetching invoices:', error);
+        updateStatusMessage('Error fetching invoices. Please try again.');
+    }
+}
 
-        async function fetchInvoices() {
-            const invoicesContainer = document.querySelector('.invoice-list');
-            invoicesContainer.innerHTML = '<h2>Your Invoices</h2>';
+function createInvoiceCard(tokenId, amount, paid, forSale, salePrice) {
+    const card = document.createElement('div');
+    card.className = 'invoice-card';
+    card.innerHTML = `
+        <p><strong>Token ID:</strong> ${tokenId}</p>
+        <p><strong>Amount:</strong> R${ethers.utils.formatEther(amount)}</p>
+        <p><strong>Status:</strong> ${paid ? 'Paid' : 'Unpaid'}</p>
+        ${!paid && !forSale ? `<button class="list-sale-btn" onclick="listForSale(${tokenId})">List for Sale</button>` : ''}
+    `;
+    return card;
+}
 
-            try {
-                const userAddress = await signer.getAddress();
-                let tokenId = 0;
-                while (true) {
-                    try {
-                        const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
-                        if (issuer === userAddress) {
-                            const invoiceCard = createInvoiceCard(tokenId, amount, paid, forSale, salePrice);
-                            invoicesContainer.appendChild(invoiceCard);
-                        }
-                        tokenId++;
-                    } catch (error) {
-                        // Assume we've reached the end of the invoices
-                        break;
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching invoices:', error);
-                updateStatusMessage('Error fetching invoices. Please try again.');
-            }
-        }
+async function listForSale(tokenId) {
+    const salePrice = prompt("Enter the sale price in Rands:");
+    if (salePrice === null) return;
 
-        function createInvoiceCard(tokenId, amount, paid, forSale, salePrice) {
-            const card = document.createElement('div');
-            card.className = 'invoice-card';
-            card.innerHTML = `
-                <p><strong>Token ID:</strong> ${tokenId}</p>
-                <p><strong>Amount:</strong> R${ethers.utils.formatEther(amount)}</p>
-                <p><strong>Status:</strong> ${paid ? 'Paid' : 'Unpaid'}</p>
-                ${!paid && !forSale ? `<button class="list-sale-btn" onclick="listForSale(${tokenId})">List for Sale</button>` : ''}
-            `;
-            return card;
-        }
+    const salePriceWei = ethers.utils.parseEther(salePrice);
+    try {
+        const tx = await contract.listInvoiceForSale(tokenId, salePriceWei);
+        updateStatusMessage('Listing invoice for sale... Please wait.');
+        await tx.wait();
+        updateStatusMessage('Invoice listed for sale successfully!');
+        await fetchInvoices();
+    } catch (error) {
+        console.error('Error listing invoice for sale:', error);
+        updateStatusMessage('Error listing invoice for sale. Please try again.');
+    }
+}
 
-        async function listForSale(tokenId) {
-            const salePrice = prompt("Enter the sale price in Rands:");
-            if (salePrice === null) return;
+window.addEventListener('load', connectWallet);
 
-            const salePriceWei = ethers.utils.parseEther(salePrice);
-            try {
-                const tx = await contract.listInvoiceForSale(tokenId, salePriceWei);
-                updateStatusMessage('Listing invoice for sale... Please wait.');
-                await tx.wait();
-                updateStatusMessage('Invoice listed for sale successfully!');
-                fetchInvoices();
-            } catch (error) {
-                console.error('Error listing invoice for sale:', error);
-                updateStatusMessage('Error listing invoice for sale. Please try again.');
-            }
-        }
-
-        window.addEventListener('load', connectWallet);
-    </script>
-</head>
-<body>
-    <header>
-        <div class="logo">
-            <img src="logo.png" alt="Acquior Technology Logo">
-        </div>
-        <button class="menu-btn">
-            <span class="menu-icon"></span>
-        </button>
-    </header>
-    <main>
-        <section class="invoice-form">
-            <h1>Create Invoice</h1>
-            <form id="invoice-form" onsubmit="createInvoice(event)">
-                <div class="input-group">
-                    <label for="recipient-address">Recipient Address</label>
-                    <input type="text" id="recipient-address" required>
-                </div>
-                <div class="input-group">
-                    <label for="amount-rands">Amount in Rands</label>
-                    <input type="number" id="amount-rands" required>
-                </div>
-                <button type="submit" class="create-invoice-btn">Create Invoice</button>
-            </form>
-            <div class="status-message">
-                Status messages and error notifications will appear here.
-            </div>
-        </section>
-        <section class="invoice-list">
-            <h2>Your Invoices</h2>
-            <!-- Invoices will be dynamically added here -->
-        </section>
-    </main>
-    <footer>
-        <nav class="footer-nav">
-            <a href="#" class="nav-icon"><img src="home-icon.png" alt="Home"></a>
-            <a href="#" class="nav-icon"><img src="invoice-icon.png" alt="Invoices"></a>
-            <a href="#" class="nav-icon"><img src="menu-icon.png" alt="Menu"></a>
-        </nav>
-    </footer>
-</body>
-</html>
+// Listen for 'InvoiceCreated' events
+if (contract) {
+    contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
+        console.log('Invoice created event:', { tokenId, amount, issuer, recipient });
+        fetchInvoices();
+    });
+}
