@@ -70,7 +70,7 @@ async function fetchInvoices() {
             try {
                 console.log('Fetching invoice details for token ID:', tokenId);
                 const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
-                console.log('Invoice details:', { tokenId, amount, issuer, recipient, paid, forSale, salePrice });
+                console.log('Invoice details:', { tokenId, amount: amount.toString(), issuer, recipient, paid, forSale, salePrice: salePrice.toString() });
                 
                 if (issuer.toLowerCase() === userAddress.toLowerCase()) {
                     console.log('Found invoice for current user');
@@ -81,11 +81,16 @@ async function fetchInvoices() {
                 tokenId++;
             } catch (error) {
                 console.log('Error fetching invoice details for token ID', tokenId, ':', error.message);
-                break; // Exit the loop if we encounter an error (likely means we've reached the end of valid token IDs)
+                if (error.message.includes("invalid token ID") || error.message.includes("out of bounds")) {
+                    console.log('Reached end of valid token IDs');
+                    break;
+                }
+                tokenId++; // Continue to next token ID even if there's an error
             }
         }
 
         if (!foundInvoices) {
+            console.log('No invoices found for the current user');
             invoicesContainer.innerHTML += '<p>No invoices found.</p>';
         }
     } catch (error) {
@@ -128,7 +133,7 @@ window.addEventListener('load', connectWallet);
 // Listen for 'InvoiceCreated' events
 if (contract) {
     contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
-        console.log('Invoice created event:', { tokenId, amount, issuer, recipient });
+        console.log('Invoice created event:', { tokenId: tokenId.toString(), amount: amount.toString(), issuer, recipient });
         fetchInvoices();
     });
 }
