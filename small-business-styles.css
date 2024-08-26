@@ -1,0 +1,136 @@
+/* small-business-styles.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f8f8f8;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+header .logo img {
+    height: 40px;
+}
+
+.menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.menu-icon {
+    width: 25px;
+    height: 3px;
+    background-color: #4CAF50;
+    display: block;
+    position: relative;
+}
+
+.menu-icon::before,
+.menu-icon::after {
+    content: '';
+    position: absolute;
+    width: 25px;
+    height: 3px;
+    background-color: #4CAF50;
+    left: 0;
+}
+
+.menu-icon::before {
+    top: -8px;
+}
+
+.menu-icon::after {
+    bottom: -8px;
+}
+
+main {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+h1, h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+label {
+    margin-bottom: 5px;
+    color: #666;
+}
+
+input[type="text"],
+input[type="number"] {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+}
+
+.create-invoice-btn,
+.list-sale-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.status-message {
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #e8f5e9;
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    color: #4CAF50;
+}
+
+.invoice-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.invoice-card p {
+    margin-bottom: 10px;
+}
+
+footer {
+    background-color: white;
+    padding: 15px;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.footer-nav {
+    display: flex;
+    justify-content: space-around;
+}
+
+.footer-nav .nav-icon img {
+    width: 25px;
+    height: 25px;
+}
