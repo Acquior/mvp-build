@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martech Fin - Small Business</title>
+    <title>Small Business Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script>
         let contract;
         let signer;
 
-        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE';
+        const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe';
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
             "function payInvoice(uint256 tokenId) public payable",
@@ -26,37 +26,51 @@
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
                     signer = provider.getSigner();
                     contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    
-                    const address = await signer.getAddress();
-                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-                    
                     console.log('Wallet connected');
+                    updateStatusMessage('Wallet connected successfully');
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
+                    updateStatusMessage('Failed to connect wallet. Please try again.');
                 }
             } else {
-                alert('Please install MetaMask!');
+                updateStatusMessage('Please install MetaMask!');
             }
         }
 
-        async function createInvoice() {
-            const recipient = document.getElementById('recipient').value;
-            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+        async function createInvoice(event) {
+            event.preventDefault();
+            const recipient = document.getElementById('recipient-address').value;
+            const amountRands = document.getElementById('amount-rands').value;
+            const amountWei = ethers.utils.parseEther(amountRands);
 
             try {
-                const tx = await contract.createInvoice(recipient, amount);
+                const tx = await contract.createInvoice(recipient, amountWei);
+                updateStatusMessage('Creating invoice... Please wait.');
                 const receipt = await tx.wait();
                 console.log('Invoice created:', receipt);
-                alert('Invoice created successfully!');
+                updateStatusMessage('Invoice created successfully!');
+                // You might want to add the new invoice to the list here
+                fetchInvoices(); // Refresh the invoice list
             } catch (error) {
                 console.error('Error creating invoice:', error);
-                alert('Error creating invoice. Check console for details.');
+                updateStatusMessage('Error creating invoice. Please try again.');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('.connect-wallet').addEventListener('click', connectWallet);
-            document.getElementById('create-invoice').addEventListener('click', createInvoice);
+        function updateStatusMessage(message) {
+            document.querySelector('.status-message').textContent = message;
+        }
+
+        async function fetchInvoices() {
+            // This is a placeholder function. You'll need to implement the logic to fetch invoices from the contract
+            // and display them in the "Your Invoices" section.
+            console.log('Fetching invoices...');
+        }
+
+        window.addEventListener('load', async () => {
+            await connectWallet();
+            document.getElementById('invoice-form').addEventListener('submit', createInvoice);
+            fetchInvoices(); // Initial fetch of invoices
         });
     </script>
 </head>
@@ -65,27 +79,46 @@
         <div class="logo">
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
-        <button class="connect-wallet">Connect Wallet</button>
+        <button class="menu-btn">
+            <span class="menu-icon"></span>
+        </button>
     </header>
-
     <main>
-        <h1>Small Business Dashboard</h1>
-        <div id="invoice-form">
-            <h2>Create Invoice</h2>
-            <input type="text" id="recipient" placeholder="Recipient Address">
-            <input type="number" id="amount" placeholder="Amount in ETH">
-            <button id="create-invoice">Create Invoice</button>
+        <h1>Create Invoice</h1>
+        <form id="invoice-form">
+            <label for="recipient-address">Recipient Address</label>
+            <input type="text" id="recipient-address" placeholder="Enter recipient address" required>
+            <label for="amount-rands">Amount in Rands</label>
+            <input type="number" id="amount-rands" placeholder="Enter amount in Rands" required>
+            <button type="submit" class="create-invoice-btn">Create Invoice</button>
+        </form>
+        <div class="status-message">
+            Status messages and error notifications will appear here.
         </div>
-        <div id="invoices-list">
-            <h2>Your Invoices</h2>
-            <!-- Invoices will be dynamically added here in future updates -->
+        
+        <h2>Your Invoices</h2>
+        <div id="invoices-container">
+            <!-- Example invoice card (you'll generate these dynamically) -->
+            <div class="invoice-card">
+                <p><strong>Token ID:</strong> 123456</p>
+                <p><strong>Amount:</strong> R500</p>
+                <p><strong>Status:</strong> Unpaid</p>
+                <button class="list-sale-btn">List for Sale</button>
+            </div>
         </div>
     </main>
-
     <footer>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-        <a href="#">Terms of Service</a>
+        <nav class="footer-nav">
+            <a href="#" class="nav-icon">
+                <img src="home-icon.png" alt="Home">
+            </a>
+            <a href="#" class="nav-icon">
+                <img src="invoice-icon.png" alt="Invoices">
+            </a>
+            <a href="#" class="nav-icon">
+                <img src="menu-icon.png" alt="Menu">
+            </a>
+        </nav>
     </footer>
 </body>
 </html>
