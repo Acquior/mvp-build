@@ -173,14 +173,14 @@
         }
 
         async function checkNetwork() {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            if (network.chainId !== 11155111) {
-                alert('Please switch to Sepolia Test Network in MetaMask');
-                return false;
-            }
-            return true;
-        }
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const network = await provider.getNetwork();
+    if (network.chainId !== 80002) { // Amoy chain ID
+        alert('Please switch to Polygon Amoy Testnet in MetaMask');
+        return false;
+    }
+    return true;
+}
 
         async function connectWallet() {
             clearLogAndReset();
