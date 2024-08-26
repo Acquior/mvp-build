@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Martech Fin - Small Business</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <script>
+        let contract;
+        let signer;
+
+        const contractAddress = '0x15D1aF7d327035b70367062621F2ECED718910BE';
+        const contractABI = [
+            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+            "function payInvoice(uint256 tokenId) public payable",
+            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+            "function buyInvoice(uint256 tokenId) public payable",
+            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
+        ];
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    
+                    const address = await signer.getAddress();
+                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    
+                    console.log('Wallet connected');
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                }
+            } else {
+                alert('Please install MetaMask!');
+            }
+        }
+
+        async function createInvoice() {
+            const recipient = document.getElementById('recipient').value;
+            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+
+            try {
+                const tx = await contract.createInvoice(recipient, amount);
+                const receipt = await tx.wait();
+                console.log('Invoice created:', receipt);
+                alert('Invoice created successfully!');
+            } catch (error) {
+                console.error('Error creating invoice:', error);
+                alert('Error creating invoice. Check console for details.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.connect-wallet').addEventListener('click', connectWallet);
+            document.getElementById('create-invoice').addEventListener('click', createInvoice);
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="logo.png" alt="Acquior Technology Logo">
+        </div>
+        <button class="connect-wallet">Connect Wallet</button>
+    </header>
+
+    <main>
+        <h1>Small Business Dashboard</h1>
+        <div id="invoice-form">
+            <h2>Create Invoice</h2>
+            <input type="text" id="recipient" placeholder="Recipient Address">
+            <input type="number" id="amount" placeholder="Amount in ETH">
+            <button id="create-invoice">Create Invoice</button>
+        </div>
+        <div id="invoices-list">
+            <h2>Your Invoices</h2>
+            <!-- Invoices will be dynamically added here in future updates -->
+        </div>
+    </main>
+
+    <footer>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Terms of Service</a>
+    </footer>
+</body>
+</html>
