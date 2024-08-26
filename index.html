@@ -8,61 +8,50 @@
 </head>
 <body>
     <header>
-        <img src="logo.png" alt="Acquior Technology Logo">
-        <button id="connectWallet">Connect Wallet</button>
+        <div class="logo">
+            <img src="logo.png" alt="Acquior Technology Logo">
+        </div>
+        <button class="connect-wallet">Connect Wallet</button>
     </header>
 
-    <nav id="mainNav">
-        <ul>
-            <li><a href="#home" class="active">Home</a></li>
-            <li><a href="#small-business">Small Business</a></li>
-            <li><a href="#investor">Investor</a></li>
-            <li><a href="#big-business">Big Business</a></li>
-        </ul>
-    </nav>
-
     <main>
-        <section id="home" class="page active">
-            <div class="card">
+        <a href="#" class="card">
+            <div class="icon">
+                <img src="small-business-icon.png" alt="Small Business Icon">
+            </div>
+            <div class="content">
                 <h2>Small Business</h2>
                 <p>Empowering small businesses with financial solutions tailored to their needs.</p>
             </div>
-            <div class="card">
+        </a>
+
+        <a href="#" class="card">
+            <div class="icon">
+                <img src="investor-icon.png" alt="Investor Icon">
+            </div>
+            <div class="content">
                 <h2>Investor</h2>
                 <p>Comprehensive tools and insights for savvy investors.</p>
             </div>
-            <div class="card">
+        </a>
+
+        <a href="#" class="card">
+            <div class="icon">
+                <img src="big-business-icon.png" alt="Big Business Icon">
+            </div>
+            <div class="content">
                 <h2>Big Business</h2>
                 <p>Robust financial solutions for large enterprises.</p>
             </div>
-        </section>
-
-        <section id="small-business" class="page">
-            <h2>Create Invoice</h2>
-            <form id="createInvoiceForm">
-                <input type="text" id="recipient" placeholder="Recipient Address">
-                <input type="number" id="amount" placeholder="Amount in ETH">
-                <button type="submit">Create Invoice</button>
-            </form>
-            <div id="small-business-result"></div>
-            <h3>Your Invoices</h3>
-            <div id="smallBusinessTable"></div>
-        </section>
-
-        <section id="investor" class="page">
-            <h2>Available Invoices</h2>
-            <div id="investorTable"></div>
-            <div id="investor-result"></div>
-        </section>
-
-        <section id="big-business" class="page">
-            <h2>Invoices to Pay</h2>
-            <div id="bigBusinessTable"></div>
-            <div id="big-business-result"></div>
-        </section>
+        </a>
     </main>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <footer>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Terms of Service</a>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
