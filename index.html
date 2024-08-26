@@ -152,6 +152,11 @@
 
         const ETH_TO_RAND = 1000000; // 1 ETH = 1,000,000 Rand
 
+        async function getGasPrice() {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const gasPrice = await provider.getGasPrice();
+    return gasPrice.mul(120).div(100); // 20% buffer
+}
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -318,76 +323,78 @@
             }
         }
 
-        async function createInvoice() {
-            try {
-                const recipient = document.getElementById('recipient').value;
-                const amountInRand = document.getElementById('amount').value;
-                const amountInEth = randToEth(amountInRand);
-                
-                console.log('Sending createInvoice transaction...');
-                const tx = await contract.createInvoice(recipient, amountInEth);
-                console.log('Transaction sent, waiting for confirmation...');
-                const receipt = await tx.wait();
-                console.log('Transaction confirmed:', receipt);
+        async function getGasPrice() {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const gasPrice = await provider.getGasPrice();
+    return gasPrice.mul(120).div(100); // 20% buffer
+}
 
-                const event = receipt.events.find(e => e.event === 'InvoiceCreated');
-                if (event) {
-                    const [tokenId, amount, issuer, recipient] = event.args;
-                    document.getElementById('small-business-result').textContent = `Invoice created successfully! Token ID: ${tokenId}`;
-                } else {
-                    document.getElementById('small-business-result').textContent = `Invoice created. Transaction hash: ${receipt.transactionHash}`;
-                }
-                updateDashboards();
-            } catch (error) {
-                console.error('Error creating invoice:', error);
-                document.getElementById('small-business-result').textContent = 'Failed to create invoice. See console for details.';
-            }
-        }
-
-        async function payInvoice(tokenId, amount) {
+async function createInvoice() {
     try {
-        console.log(`Attempting to pay invoice. Token ID: ${tokenId}, Amount: ${formatRand(ethToRand(amount))}`);
+        const recipient = document.getElementById('recipient').value;
+        const amount = ethers.utils.parseEther(document.getElementById('amount').value);
         
-        const gasPrice = await signer.getGasPrice();
-        console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+        console.log('Sending createInvoice transaction on Amoy...');
+        const gasPrice = await getGasPrice();
+        const tx = await contract.createInvoice(recipient, amount, { gasPrice });
+        console.log('Transaction sent, waiting for confirmation...');
+        const receipt = await tx.wait();
+        console.log('Transaction confirmed on Amoy:', receipt);
+
+        const event = receipt.events.find(e => e.event === 'InvoiceCreated');
+        if (event) {
+            const [tokenId, amount, issuer, recipient] = event.args;
+            updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient);
+        } else {
+            document.getElementById('result').textContent = `Invoice created on Amoy. Transaction hash: ${receipt.transactionHash}`;
+        }
+    } catch (error) {
+        console.error('Error creating invoice on Amoy:', error);
+        document.getElementById('result').textContent = 'Failed to create invoice on Amoy. See console for details.';
+    }
+}
+
+async function payInvoice() {
+    try {
+        const tokenId = document.getElementById('payTokenId').value;
+        const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
+        console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
         
+        const gasPrice = await getGasPrice();
         const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-        console.log(`Estimated gas limit: ${estimatedGas.toString()}`);
-        
         const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
         
         const tx = await contract.payInvoice(tokenId, { 
             value: amount,
+            gasPrice: gasPrice,
             gasLimit: gasLimit
         });
         console.log('Transaction sent, waiting for confirmation...');
         const receipt = await tx.wait();
-        console.log('Invoice paid successfully', receipt);
-        document.getElementById('big-business-result').textContent = 'Invoice paid successfully!';
-        updateDashboards();
+        console.log('Invoice paid successfully on Amoy', receipt);
+        document.getElementById('result').textContent = 'Invoice paid successfully on Amoy!';
     } catch (error) {
-        console.error('Error paying invoice:', error);
-        document.getElementById('big-business-result').textContent = `Failed to pay invoice: ${error.message}`;
+        console.error('Error paying invoice on Amoy:', error);
+        document.getElementById('result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
     }
 }
 
-async function listInvoiceForSale(tokenId) {
+async function listInvoiceForSale() {
     try {
-        const salePriceInRand = prompt("Enter the sale price in Rand:");
-        if (salePriceInRand === null) return;
+        const tokenId = document.getElementById('listTokenId').value;
+        const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
         
-        const salePriceInEth = randToEth(salePriceInRand);
-        console.log(`Attempting to list invoice for sale. Token ID: ${tokenId}, Sale Price: ${formatRand(salePriceInRand)}`);
+        console.log(`Attempting to list invoice for sale on Amoy. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} MATIC`);
 
-        const tx = await contract.listInvoiceForSale(tokenId, salePriceInEth);
+        const gasPrice = await getGasPrice();
+        const tx = await contract.listInvoiceForSale(tokenId, salePrice, { gasPrice });
         console.log('Transaction sent, waiting for confirmation...');
         const receipt = await tx.wait();
-        console.log('Invoice listed for sale successfully', receipt);
-        document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully!';
-        updateDashboards();
+        console.log('Invoice listed for sale successfully on Amoy', receipt);
+        document.getElementById('result').textContent = 'Invoice listed for sale successfully on Amoy!';
     } catch (error) {
-        console.error('Error listing invoice for sale:', error);
-        let errorMessage = 'Failed to list invoice for sale';
+        console.error('Error listing invoice for sale on Amoy:', error);
+        let errorMessage = 'Failed to list invoice for sale on Amoy';
         if (error.message.includes("Only the owner can list the invoice for sale")) {
             errorMessage = "You are not the owner of this invoice";
         } else if (error.message.includes("Paid invoices cannot be sold")) {
@@ -397,22 +404,25 @@ async function listInvoiceForSale(tokenId) {
         } else if (error.message.includes("Sale price must be greater than zero")) {
             errorMessage = "The sale price must be greater than zero";
         }
-        document.getElementById('small-business-result').textContent = errorMessage;
+        document.getElementById('result').textContent = errorMessage;
     }
 }
 
-async function buyInvoice(tokenId, price) {
+async function buyInvoice() {
     try {
-        console.log(`Attempting to buy invoice. Token ID: ${tokenId}, Price: ${formatRand(ethToRand(price))}`);
-        const tx = await contract.buyInvoice(tokenId, { value: price });
+        const tokenId = document.getElementById('buyTokenId').value;
+        const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
+        console.log(`Attempting to buy invoice on Amoy. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(amount)} MATIC`);
+        
+        const gasPrice = await getGasPrice();
+        const tx = await contract.buyInvoice(tokenId, { value: amount, gasPrice });
         console.log('Transaction sent, waiting for confirmation...');
         const receipt = await tx.wait();
-        console.log('Invoice bought successfully', receipt);
-        document.getElementById('investor-result').textContent = 'Invoice bought successfully!';
-        updateDashboards();
+        console.log('Invoice bought successfully on Amoy', receipt);
+        document.getElementById('result').textContent = 'Invoice bought successfully on Amoy!';
     } catch (error) {
-        console.error('Error buying invoice:', error);
-        document.getElementById('investor-result').textContent = `Failed to buy invoice: ${error.message}`;
+        console.error('Error buying invoice on Amoy:', error);
+        document.getElementById('result').textContent = `Failed to buy invoice on Amoy: ${error.message}`;
     }
 }
 
