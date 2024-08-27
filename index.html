@@ -3,57 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martech Fin Home</title>
+    <title>Martech Fin - Invoice Tokenization Platform</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script>
-        let contract;
-        let signer;
-
-        const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe';
-        const contractABI = [
-            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
-            "function payInvoice(uint256 tokenId) public payable",
-            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
-            "function buyInvoice(uint256 tokenId) public payable",
-            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
-        ];
-
-        async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await ethereum.request({ method: 'eth_requestAccounts' });
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
-                    signer = provider.getSigner();
-                    contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    
-                    const address = await signer.getAddress();
-                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-                    
-                    console.log('Wallet connected');
-                } catch (error) {
-                    console.error('Failed to connect wallet:', error);
-                }
-            } else {
-                alert('Please install MetaMask!');
-            }
+        // Your existing JavaScript code goes here
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
         }
 
-        function navigateTo(page) {
-            window.location.href = `${page}.html`;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('.connect-wallet').addEventListener('click', connectWallet);
-            
-            document.querySelectorAll('.card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const page = e.currentTarget.querySelector('h2').textContent.toLowerCase().replace(' ', '-');
-                    navigateTo(page);
-                });
-            });
-        });
+        // Add your connectWallet function and other necessary functions here
     </script>
 </head>
 <body>
@@ -61,39 +21,49 @@
         <div class="logo">
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
-        <button class="connect-wallet">Connect Wallet</button>
+        <button onclick="connectWallet()" class="connect-wallet">Connect Wallet</button>
     </header>
 
-    <main>
-        <a href="#" class="card">
-            <div class="icon">
-                <img src="small-business-icon.png" alt="Small Business Icon">
-            </div>
-            <div class="content">
-                <h2>Small Business</h2>
-                <p>Empowering small businesses with financial solutions tailored to their needs.</p>
-            </div>
-        </a>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showPage('home')">Home</a></li>
+            <li><a href="#" onclick="showPage('small-business')">Small Business</a></li>
+            <li><a href="#" onclick="showPage('big-business')">Big Business</a></li>
+            <li><a href="#" onclick="showPage('investor')">Investor</a></li>
+        </ul>
+    </nav>
 
-        <a href="#" class="card">
-            <div class="icon">
-                <img src="investor-icon.png" alt="Investor Icon">
-            </div>
-            <div class="content">
-                <h2>Investor</h2>
-                <p>Comprehensive tools and insights for savvy investors.</p>
-            </div>
-        </a>
+    <main class="container">
+        <div id="home" class="page active">
+            <h1>Welcome to Martech Fin</h1>
+            <p>Connect your wallet to get started:</p>
+            <p>Status: <span id="status">Not connected</span></p>
+        </div>
 
-        <a href="#" class="card">
-            <div class="icon">
-                <img src="big-business-icon.png" alt="Big Business Icon">
-            </div>
-            <div class="content">
-                <h2>Big Business</h2>
-                <p>Robust financial solutions for large enterprises.</p>
-            </div>
-        </a>
+        <div id="small-business" class="page">
+            <h2>Small Business Dashboard</h2>
+            <h3>Create Invoice</h3>
+            <input id="recipient" type="text" placeholder="Recipient address">
+            <input id="amount" type="text" placeholder="Amount in MATIC">
+            <button onclick="createInvoice()">Create Invoice</button>
+            <div id="small-business-result" class="result"></div>
+            <h3>Your Invoices</h3>
+            <table id="smallBusinessTable"></table>
+        </div>
+
+        <div id="big-business" class="page">
+            <h2>Big Business Dashboard</h2>
+            <h3>Invoices to Pay</h3>
+            <table id="bigBusinessTable"></table>
+            <div id="big-business-result" class="result"></div>
+        </div>
+
+        <div id="investor" class="page">
+            <h2>Investor Dashboard</h2>
+            <h3>Invoices Available for Purchase</h3>
+            <table id="investorTable"></table>
+            <div id="investor-result" class="result"></div>
+        </div>
     </main>
 
     <footer>
