@@ -102,48 +102,40 @@
             }
         }
 
-        async function fetchInvoices() {
-            console.log('Fetching invoices...');
-            const invoicesContainer = document.querySelector('.invoice-list');
-            invoicesContainer.innerHTML = '<h2>Your Invoices</h2>';
+        async function fetchInvoiceDetails(tokenId) {
+    try {
+        const invoice = await contract.invoices(tokenId);
+        // Process invoice details
+        return invoice;
+    } catch (error) {
+        console.error(`Error fetching invoice for token ID ${tokenId}:`, error);
+        return null;
+    }
+}
 
-            try {
-                const userAddress = await signer.getAddress();
-                console.log('User address:', userAddress);
-                
-                let tokenId = 0;
-                let foundInvoices = false;
+async function updateSmallBusinessDashboard(currentAddress) {
+    const table = document.getElementById('smallBusinessTable');
+    table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
 
-                while (tokenId < 100) {
-                    try {
-                        console.log(`Fetching details for token ID: ${tokenId}`);
-                        const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
-                        console.log('Invoice details:', { tokenId, amount: amount.toString(), issuer, recipient, paid, forSale, salePrice: salePrice.toString() });
-                        
-                        if (issuer.toLowerCase() === userAddress.toLowerCase()) {
-                            console.log('Found invoice for current user');
-                            const invoiceCard = createInvoiceCard(tokenId, amount, paid, forSale, salePrice);
-                            invoicesContainer.appendChild(invoiceCard);
-                            foundInvoices = true;
-                        }
-                    } catch (error) {
-                        console.error(`Error fetching invoice details for token ID ${tokenId}:`, error);
-                        if (error.message.includes("nonexistent token")) {
-                            break; // Stop if we've reached a nonexistent token
-                        }
-                    }
-                    tokenId++;
-                }
+    let tokenId = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
 
-                if (!foundInvoices) {
-                    console.log('No invoices found for the current user');
-                    invoicesContainer.innerHTML += '<p>No invoices found.</p>';
-                }
-            } catch (error) {
-                console.error('Error in fetchInvoices:', error);
-                updateStatusMessage('Error fetching invoices. Please check console for details.');
-            }
+    while (consecutiveErrors < maxConsecutiveErrors) {
+        const invoice = await fetchInvoiceDetails(tokenId);
+        if (invoice) {
+            // Process and display invoice
+            consecutiveErrors = 0;
+        } else {
+            consecutiveErrors++;
         }
+        tokenId++;
+    }
+
+    if (table.rows.length === 1) {
+        console.log("No invoices found for the current user");
+    }
+}
         async function createInvoice(event) {
             event.preventDefault();
             const recipient = document.getElementById('recipient-address').value;
