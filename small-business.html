@@ -40,11 +40,11 @@
             document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
 
             console.log('Wallet connected');
-            if (await verifyContractConnection()) {
-                console.log('Contract connection verified');
+            if (await verifyContractDeployment() && await checkNetworkConnectivity()) {
+                console.log('Contract and network verified');
                 await fetchInvoices();
             } else {
-                updateStatusMessage('Error connecting to the contract. Please check console for details.');
+                updateStatusMessage('Error connecting to the contract or network. Please check console for details.');
             }
         } catch (error) {
             console.error('Failed to connect wallet:', error);
@@ -55,7 +55,17 @@
     }
 }
         
-
+    async function checkNetworkConnectivity() {
+    try {
+        const blockNumber = await provider.getBlockNumber();
+        console.log('Current block number:', blockNumber);
+        return true;
+    } catch (error) {
+        console.error('Network connectivity issue:', error);
+        return false;
+    }
+}
+        
         async function switchToPolygonAmoy() {
     const polygonAmoyChainId = '0x13882'; // 80002 in hexadecimal
     try {
@@ -89,21 +99,20 @@
     }
 }
 
-        async function verifyContractConnection() {
-            if (!contract) {
-                console.error('Contract is not initialized');
-                return false;
-            }
-            
-            try {
-                console.log('Contract address:', contract.address);
-                console.log('Contract ABI:', JSON.stringify(contractABI));
-                return true;
-            } catch (error) {
-                console.error('Error verifying contract connection:', error);
-                return false;
-            }
+        async function verifyContractDeployment() {
+    try {
+        const code = await provider.getCode(contractAddress);
+        if (code === '0x') {
+            console.error('Contract not deployed at the specified address');
+            return false;
         }
+        console.log('Contract verified at address:', contractAddress);
+        return true;
+    } catch (error) {
+        console.error('Error verifying contract:', error);
+        return false;
+    }
+}
 
         async function fetchInvoices() {
     if (!contract) {
@@ -117,6 +126,13 @@
     updateStatusMessage('Fetching invoices...');
 
     try {
+        if (!(await verifyContractDeployment())) {
+            throw new Error('Contract verification failed');
+        }
+        if (!(await checkNetworkConnectivity())) {
+            throw new Error('Network connectivity issue');
+        }
+
         const address = await signer.getAddress();
         let tokenId = 0;
         let consecutiveErrors = 0;
@@ -124,15 +140,22 @@
 
         while (consecutiveErrors < maxConsecutiveErrors) {
             try {
+                console.log(`Attempting to fetch invoice details for token ID: ${tokenId}`);
                 const invoice = await contract.getInvoiceDetails(tokenId);
-                if (invoice[1] === address) { // Check if the current user is the issuer
+                console.log(`Received invoice details for token ID ${tokenId}:`, invoice);
+                
+                if (invoice[1] === address) {
                     const card = createInvoiceCard(tokenId, invoice[0], invoice[3], invoice[4], invoice[5]);
                     invoiceList.appendChild(card);
-                    consecutiveErrors = 0;
                 }
+                consecutiveErrors = 0;
                 tokenId++;
             } catch (error) {
                 console.error(`Error fetching invoice ${tokenId}:`, error);
+                if (error.message.includes('nonexistent token')) {
+                    console.log('Reached end of existing tokens');
+                    break;
+                }
                 consecutiveErrors++;
             }
         }
@@ -143,8 +166,8 @@
             updateStatusMessage('Invoices fetched successfully.');
         }
     } catch (error) {
-        console.error('Error fetching invoices:', error);
-        updateStatusMessage('Error fetching invoices. Please try again.');
+        console.error('Error in fetchInvoices:', error);
+        updateStatusMessage(`Error fetching invoices: ${error.message}`);
     }
 }
 
