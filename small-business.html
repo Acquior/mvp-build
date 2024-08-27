@@ -22,36 +22,32 @@
         const polygonAmoyChainId = '80002'; // Polygon Amoy testnet chain ID
 
         async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    // Check if we're on the correct network
-                    const chainId = await ethereum.request({ method: 'eth_chainId' });
-                    if (chainId !== polygonAmoyChainId) {
-                        await switchToPolygonAmoy();
-                    }
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            await switchToPolygonAmoy();
+            await ethereum.request({ method: 'eth_requestAccounts' });
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-                    await ethereum.request({ method: 'eth_requestAccounts' });
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
-                    signer = provider.getSigner();
-                    contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    
-                    const address = await signer.getAddress();
-                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-                    
-                    console.log('Wallet connected');
-                    if (await verifyContractConnection()) {
-                        console.log('Contract connection verified');
-                        await fetchInvoices();
-                    } else {
-                        updateStatusMessage('Error connecting to the contract. Please check console for details.');
-                    }
-                } catch (error) {
-                    console.error('Failed to connect wallet:', error);
-                    updateStatusMessage('Failed to connect wallet. Please try again.');
-                }
+            const address = await signer.getAddress();
+            document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+
+            console.log('Wallet connected');
+            if (await verifyContractConnection()) {
+                console.log('Contract connection verified');
+                await fetchInvoices();
             } else {
-                alert('Please install MetaMask!');
+                updateStatusMessage('Error connecting to the contract. Please check console for details.');
             }
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+            updateStatusMessage('Failed to connect wallet. Please try again.');
+        }
+    } else {
+        alert('Please install MetaMask!');
+    }
+}
         }
 
         async function switchToPolygonAmoy() {
@@ -102,14 +98,46 @@
             }
         }
 
-        async function fetchInvoiceDetails(tokenId) {
+        async function fetchInvoices() {
+    if (!contract) {
+        console.error('Contract is not initialized');
+        updateStatusMessage('Error: Contract not initialized. Please connect your wallet.');
+        return;
+    }
+
+    const invoiceList = document.querySelector('.invoice-list');
+    invoiceList.innerHTML = '<h2>Your Invoices</h2>';
+    updateStatusMessage('Fetching invoices...');
+
     try {
-        const invoice = await contract.invoices(tokenId);
-        // Process invoice details
-        return invoice;
+        const address = await signer.getAddress();
+        let tokenId = 0;
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 5;
+
+        while (consecutiveErrors < maxConsecutiveErrors) {
+            try {
+                const invoice = await contract.getInvoiceDetails(tokenId);
+                if (invoice[1] === address) { // Check if the current user is the issuer
+                    const card = createInvoiceCard(tokenId, invoice[0], invoice[3], invoice[4], invoice[5]);
+                    invoiceList.appendChild(card);
+                    consecutiveErrors = 0;
+                }
+                tokenId++;
+            } catch (error) {
+                console.error(`Error fetching invoice ${tokenId}:`, error);
+                consecutiveErrors++;
+            }
+        }
+
+        if (invoiceList.children.length === 1) {
+            updateStatusMessage('No invoices found for the current user.');
+        } else {
+            updateStatusMessage('Invoices fetched successfully.');
+        }
     } catch (error) {
-        console.error(`Error fetching invoice for token ID ${tokenId}:`, error);
-        return null;
+        console.error('Error fetching invoices:', error);
+        updateStatusMessage('Error fetching invoices. Please try again.');
     }
 }
 
@@ -137,40 +165,42 @@ async function updateSmallBusinessDashboard(currentAddress) {
     }
 }
         async function createInvoice(event) {
-            event.preventDefault();
-            const recipient = document.getElementById('recipient-address').value;
-            const amountRands = document.getElementById('amount-rands').value;
-            const amountWei = ethers.utils.parseEther(amountRands);
+    event.preventDefault();
+    const recipient = document.getElementById('recipient-address').value;
+    const amountMatic = document.getElementById('amount-matic').value;
+    const amountWei = ethers.utils.parseEther(amountMatic);
 
-            try {
-                updateStatusMessage('Creating invoice... Please wait.');
-                const tx = await contract.createInvoice(recipient, amountWei);
-                console.log('Transaction sent:', tx.hash);
-                const receipt = await tx.wait();
-                console.log('Invoice created:', receipt);
-                updateStatusMessage('Invoice created successfully!');
-                await fetchInvoices();
-            } catch (error) {
-                console.error('Error creating invoice:', error);
-                updateStatusMessage('Error creating invoice. Please try again.');
-            }
-        }
+    try {
+        updateStatusMessage('Creating invoice... Please wait.');
+        const tx = await contract.createInvoice(recipient, amountWei);
+        console.log('Transaction sent:', tx.hash);
+        const receipt = await tx.wait();
+        console.log('Invoice created:', receipt);
+        updateStatusMessage('Invoice created successfully!');
+        await fetchInvoices();
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        updateStatusMessage('Error creating invoice. Please try again.');
+    }
+}
 
         function updateStatusMessage(message) {
             document.querySelector('.status-message').textContent = message;
         }
 
         function createInvoiceCard(tokenId, amount, paid, forSale, salePrice) {
-            const card = document.createElement('div');
-            card.className = 'invoice-card';
-            card.innerHTML = `
-                <p><strong>Token ID:</strong> ${tokenId}</p>
-                <p><strong>Amount:</strong> R${ethers.utils.formatEther(amount)}</p>
-                <p><strong>Status:</strong> ${paid ? 'Paid' : 'Unpaid'}</p>
-                ${!paid && !forSale ? `<button class="list-sale-btn" onclick="listForSale(${tokenId})">List for Sale</button>` : ''}
-            `;
-            return card;
-        }
+    const card = document.createElement('div');
+    card.className = 'invoice-card';
+    card.innerHTML = `
+        <p><strong>Token ID:</strong> ${tokenId}</p>
+        <p><strong>Amount:</strong> ${ethers.utils.formatEther(amount)} MATIC</p>
+        <p><strong>Status:</strong> ${paid ? 'Paid' : 'Unpaid'}</p>
+        <p><strong>For Sale:</strong> ${forSale ? 'Yes' : 'No'}</p>
+        ${forSale ? `<p><strong>Sale Price:</strong> ${ethers.utils.formatEther(salePrice)} MATIC</p>` : ''}
+        ${!paid && !forSale ? `<button class="list-sale-btn" onclick="listForSale(${tokenId})">List for Sale</button>` : ''}
+    `;
+    return card;
+}
 
         async function listForSale(tokenId) {
             const salePrice = prompt("Enter the sale price in Rands:");
