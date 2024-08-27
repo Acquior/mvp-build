@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="small-business-styles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script>
+        let provider;
         let contract;
         let signer;
         const contractAddress = '0xe4d5De9eb7b059d6AC206a021aCa3967975658d9';
@@ -22,49 +23,53 @@
         const polygonAmoyChainId = '80002'; // Polygon Amoy testnet chain ID
 
         async function connectWallet() {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            await switchToPolygonAmoy();
-            await ethereum.request({ method: 'eth_requestAccounts' });
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            
-            if (network.chainId !== 80002) {
-                throw new Error('Please connect to the Polygon Amoy network in MetaMask.');
-            }
-            
-            signer = provider.getSigner();
-            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await switchToPolygonAmoy();
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const network = await provider.getNetwork();
+                    
+                    if (network.chainId !== 80002) {
+                        throw new Error('Please connect to the Polygon Amoy network in MetaMask.');
+                    }
+                    
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-            const address = await signer.getAddress();
-            document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    const address = await signer.getAddress();
+                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
 
-            console.log('Wallet connected');
-            if (await verifyContractDeployment() && await checkNetworkConnectivity()) {
-                console.log('Contract and network verified');
-                await fetchInvoices();
+                    console.log('Wallet connected');
+                    if (await verifyContractDeployment() && await checkNetworkConnectivity()) {
+                        console.log('Contract and network verified');
+                        await fetchInvoices();
+                    } else {
+                        updateStatusMessage('Error connecting to the contract or network. Please check console for details.');
+                    }
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    updateStatusMessage(`Failed to connect wallet: ${error.message}`);
+                }
             } else {
-                updateStatusMessage('Error connecting to the contract or network. Please check console for details.');
+                alert('Please install MetaMask!');
             }
-        } catch (error) {
-            console.error('Failed to connect wallet:', error);
-            updateStatusMessage(`Failed to connect wallet: ${error.message}`);
         }
-    } else {
-        alert('Please install MetaMask!');
-    }
-}
         
     async function checkNetworkConnectivity() {
-    try {
-        const blockNumber = await provider.getBlockNumber();
-        console.log('Current block number:', blockNumber);
-        return true;
-    } catch (error) {
-        console.error('Network connectivity issue:', error);
-        return false;
-    }
-}
+            if (!provider) {
+                console.error('Provider is not initialized');
+                return false;
+            }
+            try {
+                const blockNumber = await provider.getBlockNumber();
+                console.log('Current block number:', blockNumber);
+                return true;
+            } catch (error) {
+                console.error('Network connectivity issue:', error);
+                return false;
+            }
+        }
         
         async function switchToPolygonAmoy() {
     const polygonAmoyChainId = '0x13882'; // 80002 in hexadecimal
@@ -100,19 +105,23 @@
 }
 
         async function verifyContractDeployment() {
-    try {
-        const code = await provider.getCode(contractAddress);
-        if (code === '0x') {
-            console.error('Contract not deployed at the specified address');
-            return false;
+            if (!provider) {
+                console.error('Provider is not initialized');
+                return false;
+            }
+            try {
+                const code = await provider.getCode(contractAddress);
+                if (code === '0x') {
+                    console.error('Contract not deployed at the specified address');
+                    return false;
+                }
+                console.log('Contract verified at address:', contractAddress);
+                return true;
+            } catch (error) {
+                console.error('Error verifying contract:', error);
+                return false;
+            }
         }
-        console.log('Contract verified at address:', contractAddress);
-        return true;
-    } catch (error) {
-        console.error('Error verifying contract:', error);
-        return false;
-    }
-}
 
         async function fetchInvoices() {
     if (!contract) {
@@ -195,24 +204,24 @@ async function updateSmallBusinessDashboard(currentAddress) {
     }
 }
         async function createInvoice(event) {
-    event.preventDefault();
-    const recipient = document.getElementById('recipient-address').value;
-    const amountMatic = document.getElementById('amount-matic').value;
-    const amountWei = ethers.utils.parseEther(amountMatic);
+            event.preventDefault();
+            const recipient = document.getElementById('recipient-address').value;
+            const amountMatic = document.getElementById('amount-matic').value;
+            const amountWei = ethers.utils.parseEther(amountMatic);
 
-    try {
-        updateStatusMessage('Creating invoice... Please wait.');
-        const tx = await contract.createInvoice(recipient, amountWei);
-        console.log('Transaction sent:', tx.hash);
-        const receipt = await tx.wait();
-        console.log('Invoice created:', receipt);
-        updateStatusMessage('Invoice created successfully!');
-        await fetchInvoices();
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        updateStatusMessage('Error creating invoice. Please try again.');
-    }
-}
+            try {
+                updateStatusMessage('Creating invoice... Please wait.');
+                const tx = await contract.createInvoice(recipient, amountWei);
+                console.log('Transaction sent:', tx.hash);
+                const receipt = await tx.wait();
+                console.log('Invoice created:', receipt);
+                updateStatusMessage('Invoice created successfully!');
+                await fetchInvoices();
+            } catch (error) {
+                console.error('Error creating invoice:', error);
+                updateStatusMessage('Error creating invoice. Please try again.');
+            }
+        }
 
         function updateStatusMessage(message) {
             document.querySelector('.status-message').textContent = message;
