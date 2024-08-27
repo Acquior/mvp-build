@@ -51,36 +51,37 @@
         }
 
         async function switchToPolygonAmoy() {
+    const polygonAmoyChainId = '0x13881'; // 80002 in hexadecimal
+    try {
+        await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: polygonAmoyChainId }],
+        });
+    } catch (switchError) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902) {
             try {
                 await ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: polygonAmoyChainId }],
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: polygonAmoyChainId,
+                        chainName: 'Polygon Amoy Testnet',
+                        nativeCurrency: {
+                            name: 'MATIC',
+                            symbol: 'MATIC',
+                            decimals: 18
+                        },
+                        rpcUrls: ['https://rpc-amoy.polygon.technology/'],
+                        blockExplorerUrls: ['https://www.oklink.com/amoy']
+                    }],
                 });
-            } catch (switchError) {
-                // This error code indicates that the chain has not been added to MetaMask.
-                if (switchError.code === 4902) {
-                    try {
-                        await ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [{
-                                chainId: polygonAmoyChainId,
-                                chainName: 'Polygon Amoy Testnet',
-                                nativeCurrency: {
-                                    name: 'MATIC',
-                                    symbol: 'MATIC',
-                                    decimals: 18
-                                },
-                                rpcUrls: ['https://rpc-amoy.polygon.technology/'],
-                                blockExplorerUrls: ['https://amoy.polygonscan.com/']
-                            }],
-                        });
-                    } catch (addError) {
-                        console.error('Failed to add Polygon Amoy network:', addError);
-                    }
-                }
-                console.error('Failed to switch to Polygon Amoy network:', switchError);
+            } catch (addError) {
+                console.error('Failed to add Polygon Amoy network:', addError);
             }
         }
+        console.error('Failed to switch to Polygon Amoy network:', switchError);
+    }
+}
 
         async function verifyContractConnection() {
             if (!contract) {
