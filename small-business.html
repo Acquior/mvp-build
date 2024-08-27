@@ -39,6 +39,37 @@
             }
         }
 
+        async function connectWallet() {
+    // ... existing code ...
+    if (await verifyContractConnection()) {
+        console.log('Contract connection verified');
+        await fetchInvoices();
+    } else {
+        updateStatusMessage('Error connecting to the contract. Please check console for details.');
+    }
+}
+        
+async function verifyContractConnection() {
+    if (!contract) {
+        console.error('Contract is not initialized');
+        return false;
+    }
+    
+    try {
+        console.log('Contract address:', contract.address);
+        console.log('Contract ABI:', JSON.stringify(contractABI));
+        
+        // Try to call a simple view function, if available
+        // For example, if your contract has a 'name' function:
+        // const name = await contract.name();
+        // console.log('Contract name:', name);
+        
+        return true;
+    } catch (error) {
+        console.error('Error verifying contract connection:', error);
+        return false;
+    }
+}
         async function createInvoice(event) {
             event.preventDefault();
             const recipient = document.getElementById('recipient-address').value;
@@ -64,44 +95,49 @@
         }
 
         async function fetchInvoices() {
-            console.log('Fetching invoices...');
-            const invoicesContainer = document.querySelector('.invoice-list');
-            invoicesContainer.innerHTML = '<h2>Your Invoices</h2>';
+    console.log('Fetching invoices...');
+    const invoicesContainer = document.querySelector('.invoice-list');
+    invoicesContainer.innerHTML = '<h2>Your Invoices</h2>';
 
+    try {
+        const userAddress = await signer.getAddress();
+        console.log('User address:', userAddress);
+        
+        let tokenId = 0;
+        let foundInvoices = false;
+
+        while (tokenId < 100) {
             try {
-                const userAddress = await signer.getAddress();
-                console.log('User address:', userAddress);
+                console.log(`Fetching details for token ID: ${tokenId}`);
+                const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
+                console.log('Invoice details:', { tokenId, amount: amount.toString(), issuer, recipient, paid, forSale, salePrice: salePrice.toString() });
                 
-                let tokenId = 0;
-                let foundInvoices = false;
-
-                while (tokenId < 100) {
-                    try {
-                        const [amount, issuer, recipient, paid, forSale, salePrice] = await contract.getInvoiceDetails(tokenId);
-                        console.log('Invoice details:', { tokenId, amount: amount.toString(), issuer, recipient, paid, forSale, salePrice: salePrice.toString() });
-                        
-                        if (issuer.toLowerCase() === userAddress.toLowerCase()) {
-                            console.log('Found invoice for current user');
-                            const invoiceCard = createInvoiceCard(tokenId, amount, paid, forSale, salePrice);
-                            invoicesContainer.appendChild(invoiceCard);
-                            foundInvoices = true;
-                        }
-                        tokenId++;
-                    } catch (error) {
-                        console.log('Error fetching invoice details for token ID', tokenId, ':', error.message);
-                        break;
-                    }
+                if (issuer.toLowerCase() === userAddress.toLowerCase()) {
+                    console.log('Found invoice for current user');
+                    const invoiceCard = createInvoiceCard(tokenId, amount, paid, forSale, salePrice);
+                    invoicesContainer.appendChild(invoiceCard);
+                    foundInvoices = true;
                 }
-
-                if (!foundInvoices) {
-                    console.log('No invoices found for the current user');
-                    invoicesContainer.innerHTML += '<p>No invoices found.</p>';
-                }
+                tokenId++;
             } catch (error) {
-                console.error('Error fetching invoices:', error);
-                updateStatusMessage('Error fetching invoices. Please try again.');
+                console.error(`Error fetching invoice details for token ID ${tokenId}:`, error);
+                if (error.message.includes("Invalid token ID") || error.message.includes("out of bounds")) {
+                    console.log('Reached end of valid token IDs');
+                    break;
+                }
+                tokenId++;
             }
         }
+
+        if (!foundInvoices) {
+            console.log('No invoices found for the current user');
+            invoicesContainer.innerHTML += '<p>No invoices found.</p>';
+        }
+    } catch (error) {
+        console.error('Error in fetchInvoices:', error);
+        updateStatusMessage('Error fetching invoices. Please check console for details.');
+    }
+}
 
         function createInvoiceCard(tokenId, amount, paid, forSale, salePrice) {
             const card = document.createElement('div');
