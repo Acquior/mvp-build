@@ -3,73 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martech Fin - Invoice Tokenization Platform</title>
+    <title>Acquior Technology</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
-    <script>
-        // Your existing JavaScript code goes here
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-        }
-
-        // Add your connectWallet function and other necessary functions here
-    </script>
 </head>
 <body>
     <header>
         <div class="logo">
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
-        <button onclick="connectWallet()" class="connect-wallet">Connect Wallet</button>
+        <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
     </header>
-
     <nav>
         <ul>
-            <li><a href="#" onclick="showPage('home')">Home</a></li>
-            <li><a href="#" onclick="showPage('small-business')">Small Business</a></li>
-            <li><a href="#" onclick="showPage('big-business')">Big Business</a></li>
-            <li><a href="#" onclick="showPage('investor')">Investor</a></li>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#small-business">Small Business</a></li>
+            <li><a href="#investor">Investor</a></li>
+            <li><a href="#big-business">Big Business</a></li>
         </ul>
     </nav>
-
-    <main class="container">
-        <div id="home" class="page active">
-            <h1>Welcome to Martech Fin</h1>
-            <p>Connect your wallet to get started:</p>
-            <p>Status: <span id="status">Not connected</span></p>
-        </div>
-
-        <div id="small-business" class="page">
-            <h2>Small Business Dashboard</h2>
-            <h3>Create Invoice</h3>
-            <input id="recipient" type="text" placeholder="Recipient address">
-            <input id="amount" type="text" placeholder="Amount in MATIC">
-            <button onclick="createInvoice()">Create Invoice</button>
-            <div id="small-business-result" class="result"></div>
-            <h3>Your Invoices</h3>
-            <table id="smallBusinessTable"></table>
-        </div>
-
-        <div id="big-business" class="page">
-            <h2>Big Business Dashboard</h2>
-            <h3>Invoices to Pay</h3>
-            <table id="bigBusinessTable"></table>
-            <div id="big-business-result" class="result"></div>
-        </div>
-
-        <div id="investor" class="page">
-            <h2>Investor Dashboard</h2>
-            <h3>Invoices Available for Purchase</h3>
-            <table id="investorTable"></table>
-            <div id="investor-result" class="result"></div>
-        </div>
+    <main id="home">
+        <h1>Welcome to Acquior Technology</h1>
+        <p>Status: <span id="status">Not connected</span></p>
     </main>
-
     <footer>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-        <a href="#">Terms of Service</a>
+        <nav class="footer-nav">
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+            <a href="#terms">Terms of Service</a>
+        </nav>
     </footer>
+    <script>
+        let provider;
+        let signer;
+        let contract;
+
+        const contractAddress = '0xe4d5De9eb7b059d6AC206a021aCa3967975658d9';
+        const contractABI = [
+            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+            "function payInvoice(uint256 tokenId) public payable",
+            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+            "function buyInvoice(uint256 tokenId) public payable",
+            "function getInvoiceDetails(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
+            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)"
+        ];
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    const address = await signer.getAddress();
+                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    document.getElementById('status').textContent = 'Connected';
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    document.getElementById('status').textContent = 'Connection failed';
+                }
+            } else {
+                alert('Please install MetaMask!');
+            }
+        }
+    </script>
 </body>
 </html>
