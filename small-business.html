@@ -27,6 +27,12 @@
             await switchToPolygonAmoy();
             await ethereum.request({ method: 'eth_requestAccounts' });
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            
+            if (network.chainId !== 80002) {
+                throw new Error('Please connect to the Polygon Amoy network in MetaMask.');
+            }
+            
             signer = provider.getSigner();
             contract = new ethers.Contract(contractAddress, contractABI, signer);
 
@@ -42,7 +48,7 @@
             }
         } catch (error) {
             console.error('Failed to connect wallet:', error);
-            updateStatusMessage('Failed to connect wallet. Please try again.');
+            updateStatusMessage(`Failed to connect wallet: ${error.message}`);
         }
     } else {
         alert('Please install MetaMask!');
@@ -51,7 +57,7 @@
         
 
         async function switchToPolygonAmoy() {
-    const polygonAmoyChainId = '0x13881'; // 80002 in hexadecimal
+    const polygonAmoyChainId = '0x13882'; // 80002 in hexadecimal
     try {
         await ethereum.request({
             method: 'wallet_switchEthereumChain',
@@ -65,7 +71,7 @@
                     method: 'wallet_addEthereumChain',
                     params: [{
                         chainId: polygonAmoyChainId,
-                        chainName: 'Polygon Amoy Testnet',
+                        chainName: 'Polygon Amoy',
                         nativeCurrency: {
                             name: 'MATIC',
                             symbol: 'MATIC',
