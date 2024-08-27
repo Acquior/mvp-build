@@ -9,7 +9,6 @@
     <script>
         let contract;
         let signer;
-
         const contractAddress = '0x830CC57aA0A99dc7F8C3154f7c5F58cED390aAbe';
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
@@ -27,49 +26,41 @@
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
                     signer = provider.getSigner();
                     contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    
+                    const address = await signer.getAddress();
+                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    
                     console.log('Wallet connected');
-                    updateStatusMessage('Wallet connected successfully');
-                    await fetchInvoices();
+                    if (await verifyContractConnection()) {
+                        console.log('Contract connection verified');
+                        await fetchInvoices();
+                    } else {
+                        updateStatusMessage('Error connecting to the contract. Please check console for details.');
+                    }
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
                     updateStatusMessage('Failed to connect wallet. Please try again.');
                 }
             } else {
-                updateStatusMessage('Please install MetaMask!');
+                alert('Please install MetaMask!');
             }
         }
 
-        async function connectWallet() {
-    // ... existing code ...
-    if (await verifyContractConnection()) {
-        console.log('Contract connection verified');
-        await fetchInvoices();
-    } else {
-        updateStatusMessage('Error connecting to the contract. Please check console for details.');
-    }
-}
-        
-async function verifyContractConnection() {
-    if (!contract) {
-        console.error('Contract is not initialized');
-        return false;
-    }
-    
-    try {
-        console.log('Contract address:', contract.address);
-        console.log('Contract ABI:', JSON.stringify(contractABI));
-        
-        // Try to call a simple view function, if available
-        // For example, if your contract has a 'name' function:
-        // const name = await contract.name();
-        // console.log('Contract name:', name);
-        
-        return true;
-    } catch (error) {
-        console.error('Error verifying contract connection:', error);
-        return false;
-    }
-}
+        async function verifyContractConnection() {
+            if (!contract) {
+                console.error('Contract is not initialized');
+                return false;
+            }
+            
+            try {
+                console.log('Contract address:', contract.address);
+                console.log('Contract ABI:', JSON.stringify(contractABI));
+                return true;
+            } catch (error) {
+                console.error('Error verifying contract connection:', error);
+                return false;
+            }
+        }
         async function createInvoice(event) {
             event.preventDefault();
             const recipient = document.getElementById('recipient-address').value;
@@ -168,7 +159,9 @@ async function verifyContractConnection() {
             }
         }
 
-        window.addEventListener('load', connectWallet);
+           document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.connect-wallet').addEventListener('click', connectWallet);
+        });
     </script>
 </head>
 <body>
@@ -176,9 +169,7 @@ async function verifyContractConnection() {
         <div class="logo">
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
-        <button class="menu-btn">
-            <span class="menu-icon"></span>
-        </button>
+        <button class="connect-wallet">Connect Wallet</button>
     </header>
     <main>
         <h1>Create Invoice</h1>
@@ -200,15 +191,9 @@ async function verifyContractConnection() {
     </main>
     <footer>
         <nav class="footer-nav">
-            <a href="#" class="nav-icon">
-                <img src="home-icon.png" alt="Home">
-            </a>
-            <a href="#" class="nav-icon">
-                <img src="invoice-icon.png" alt="Invoices">
-            </a>
-            <a href="#" class="nav-icon">
-                <img src="menu-icon.png" alt="Menu">
-            </a>
+            <a href="index.html" class="nav-icon">Home</a>
+            <a href="#" class="nav-icon">Invoices</a>
+            <a href="#" class="nav-icon">Menu</a>
         </nav>
     </footer>
 </body>
