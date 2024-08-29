@@ -358,24 +358,12 @@
 
         async function payInvoice(tokenId, amount) {
             try {
-                const balance = await signer.getBalance();
-                const amountBN = ethers.BigNumber.from(amount);
-                if (balance.lt(amountBN)) {
-                    throw new Error(`Insufficient funds. Balance: ${ethers.utils.formatEther(balance)} MATIC, Required: ${ethers.utils.formatEther(amountBN)} MATIC`);
-                }
-
                 console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
                 
-                let gasLimit;
-                try {
-                    const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-                    gasLimit = estimatedGas.mul(110).div(100); // 10% buffer
-                } catch (error) {
-                    console.error('Error estimating gas:', error);
-                    gasLimit = ethers.BigNumber.from(300000); // fallback to a fixed gas limit
-                }
-
                 const gasPrice = await getGasPrice();
+                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+                
                 const tx = await contract.payInvoice(tokenId, { 
                     value: amount,
                     gasPrice: gasPrice,
@@ -388,11 +376,7 @@
                 updateDashboards();
             } catch (error) {
                 console.error('Error paying invoice on Amoy:', error);
-                let errorMessage = error.message;
-                if (error.data && error.data.message) {
-                    errorMessage += ` - ${error.data.message}`;
-                }
-                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${errorMessage}`;
+                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
             }
         }
 
