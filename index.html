@@ -3,67 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Martech Fin - Invoice Tokenization Platform</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
-    <script>
-        // Your existing JavaScript code goes here
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
+    <title>Acquior Technology - Invoice Tokenization Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
         }
 
-        // Add your connectWallet function and other necessary functions here
-    </script>
+        body {
+            background-color: #f8f8f8;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header .logo img {
+            height: 40px;
+        }
+
+        .connect-wallet {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: black;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .card .icon img {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .card .content h2 {
+            font-size: 1.25em;
+            margin-bottom: 10px;
+        }
+
+        .card .content p {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        footer {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        footer a {
+            margin: 0 15px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="logo">
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
-        <button onclick="connectWallet()" class="connect-wallet">Connect Wallet</button>
+        <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
     </header>
 
-    <nav>
-        <ul>
-            <li><a href="#" onclick="showPage('home')">Home</a></li>
-            <li><a href="#" onclick="showPage('small-business')">Small Business</a></li>
-            <li><a href="#" onclick="showPage('big-business')">Big Business</a></li>
-            <li><a href="#" onclick="showPage('investor')">Investor</a></li>
-        </ul>
-    </nav>
+    <main role="main">
+        <a href="small-business.html" class="card">
+            <div class="icon">
+                <img src="small-business-icon.png" alt="Small Business Icon">
+            </div>
+            <div class="content">
+                <h2>Small Business</h2>
+                <p>Empowering small businesses with financial solutions tailored to their needs.</p>
+            </div>
+        </a>
 
-    <main class="container">
-        <div id="home" class="page active">
-            <h1>Welcome to Martech Fin</h1>
-            <p>Connect your wallet to get started:</p>
-            <p>Status: <span id="status">Not connected</span></p>
-        </div>
+        <a href="investor.html" class="card">
+            <div class="icon">
+                <img src="investor-icon.png" alt="Investor Icon">
+            </div>
+            <div class="content">
+                <h2>Investor</h2>
+                <p>Comprehensive tools and insights for savvy investors.</p>
+            </div>
+        </a>
 
-        <div id="small-business" class="page">
-            <h2>Small Business Dashboard</h2>
-            <h3>Create Invoice</h3>
-            <input id="recipient" type="text" placeholder="Recipient address">
-            <input id="amount" type="text" placeholder="Amount in MATIC">
-            <button onclick="createInvoice()">Create Invoice</button>
-            <div id="small-business-result" class="result"></div>
-            <h3>Your Invoices</h3>
-            <table id="smallBusinessTable"></table>
-        </div>
-
-        <div id="big-business" class="page">
-            <h2>Big Business Dashboard</h2>
-            <h3>Invoices to Pay</h3>
-            <table id="bigBusinessTable"></table>
-            <div id="big-business-result" class="result"></div>
-        </div>
-
-        <div id="investor" class="page">
-            <h2>Investor Dashboard</h2>
-            <h3>Invoices Available for Purchase</h3>
-            <table id="investorTable"></table>
-            <div id="investor-result" class="result"></div>
-        </div>
+        <a href="big-business.html" class="card">
+            <div class="icon">
+                <img src="big-business-icon.png" alt="Big Business Icon">
+            </div>
+            <div class="content">
+                <h2>Big Business</h2>
+                <p>Robust financial solutions for large enterprises.</p>
+            </div>
+        </a>
     </main>
 
     <footer>
@@ -71,5 +143,22 @@
         <a href="#">Contact</a>
         <a href="#">Terms of Service</a>
     </footer>
+
+    <script>
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const connectWalletButton = document.querySelector('.connect-wallet');
+                    connectWalletButton.textContent = 'Connected';
+                    connectWalletButton.disabled = true;
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                }
+            } else {
+                alert('Please install MetaMask to use this feature');
+            }
+        }
+    </script>
 </body>
 </html>
