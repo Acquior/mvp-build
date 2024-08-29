@@ -3,118 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acquior Technology - Invoice Tokenization Platform</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f8f8f8;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        header .logo img {
-            height: 40px;
-        }
-
-        .connect-wallet {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-
-        main {
-            padding: 20px;
-            flex-grow: 1;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: black;
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-        }
-
-        .card .icon img {
-            width: 50px;
-            height: 50px;
-            margin-right: 15px;
-        }
-
-        .card .content h2 {
-            font-size: 1.25em;
-            margin-bottom: 10px;
-        }
-
-        .card .content p {
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        footer {
-            background-color: white;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        footer a {
-            margin: 0 15px;
-            color: #4CAF50;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        .status-message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            display: none;
-        }
-
-        .status-message.success {
-            background-color: #e8f5e9;
-            color: #4CAF50;
-        }
-
-        .status-message.error {
-            background-color: #ffebee;
-            color: #f44336;
-        }
-    </style>
+    <title>Martech Fin - Invoice Tokenization Platform</title>
+    <link rel="stylesheet" href="indexstyles.css">
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
 </head>
 <body>
     <header>
@@ -124,73 +15,379 @@
         <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
     </header>
 
-    <main role="main">
-        <div id="statusMessage" class="status-message"></div>
-        <a href="small-business.html" class="card">
-            <div class="icon">
-                <img src="small-business-icon.png" alt="Small Business Icon">
-            </div>
-            <div class="content">
-                <h2>Small Business</h2>
-                <p>Empowering small businesses with financial solutions tailored to their needs.</p>
-            </div>
-        </a>
+    <main>
+        <div id="home" class="page active">
+            <a href="#" class="card" onclick="showPage('small-business')">
+                <div class="icon">
+                    <img src="small-business-icon.png" alt="Small Business Icon">
+                </div>
+                <div class="content">
+                    <h2>Small Business</h2>
+                    <p>Empowering small businesses with financial solutions tailored to their needs.</p>
+                </div>
+            </a>
 
-        <a href="investor.html" class="card">
-            <div class="icon">
-                <img src="investor-icon.png" alt="Investor Icon">
-            </div>
-            <div class="content">
-                <h2>Investor</h2>
-                <p>Comprehensive tools and insights for savvy investors.</p>
-            </div>
-        </a>
+            <a href="#" class="card" onclick="showPage('investor')">
+                <div class="icon">
+                    <img src="investor-icon.png" alt="Investor Icon">
+                </div>
+                <div class="content">
+                    <h2>Investor</h2>
+                    <p>Comprehensive tools and insights for savvy investors.</p>
+                </div>
+            </a>
 
-        <a href="big-business.html" class="card">
-            <div class="icon">
-                <img src="big-business-icon.png" alt="Big Business Icon">
+            <a href="#" class="card" onclick="showPage('big-business')">
+                <div class="icon">
+                    <img src="big-business-icon.png" alt="Big Business Icon">
+                </div>
+                <div class="content">
+                    <h2>Big Business</h2>
+                    <p>Robust financial solutions for large enterprises.</p>
+                </div>
+            </a>
+        </div>
+
+        <div id="small-business" class="page">
+            <h2>Small Business Dashboard</h2>
+            <h3>Create Invoice</h3>
+            <form id="invoice-form" onsubmit="createInvoice(event)">
+                <input id="recipient" type="text" placeholder="Recipient address">
+                <input id="amount" type="number" placeholder="Amount in Rands">
+                <button type="submit">Create Invoice</button>
+            </form>
+            <div id="small-business-result" class="result"></div>
+            <h3>Your Invoices</h3>
+            <div class="invoice-list">
+                <table id="smallBusinessTable"></table>
             </div>
-            <div class="content">
-                <h2>Big Business</h2>
-                <p>Robust financial solutions for large enterprises.</p>
-            </div>
-        </a>
+        </div>
+
+        <div id="big-business" class="page">
+            <h2>Big Business Dashboard</h2>
+            <h3>Invoices to Pay</h3>
+            <table id="bigBusinessTable"></table>
+            <div id="big-business-result" class="result"></div>
+        </div>
+
+        <div id="investor" class="page">
+            <h2>Investor Dashboard</h2>
+            <h3>Invoices Available for Purchase</h3>
+            <table id="investorTable"></table>
+            <div id="investor-result" class="result"></div>
+        </div>
     </main>
 
     <footer>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-        <a href="#">Terms of Service</a>
+        <nav class="footer-nav">
+            <a href="#" onclick="showPage('home')" class="nav-icon">Home</a>
+            <a href="#" class="nav-icon">Invoices</a>
+            <a href="#" class="nav-icon">Menu</a>
+        </nav>
     </footer>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script>
-        async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    const connectWalletButton = document.querySelector('.connect-wallet');
-                    connectWalletButton.textContent = 'Connected';
-                    connectWalletButton.disabled = true;
-                    showStatusMessage('Wallet connected successfully!', 'success');
-                } catch (error) {
-                    console.error('Failed to connect wallet:', error);
-                    showStatusMessage('Failed to connect wallet. Please try again.', 'error');
-                }
-            } else {
-                showStatusMessage('Please install MetaMask to use this feature', 'error');
+        let contract;
+        let signer;
+
+        const contractAddress = '0x524b0F673D311C35368eca5FB03957d9701D37AA';
+        const contractABI = [
+            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
+            "function payInvoice(uint256 tokenId) public payable",
+            "function isInvoicePaid(uint256 tokenId) public view returns (bool)",
+            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+            "function buyInvoice(uint256 tokenId) public payable",
+            "function invoices(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
+            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)",
+            "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
+            "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
+        ];
+
+        const ETH_TO_RAND = 1000000; // 1 ETH = 1,000,000 Rand
+
+        async function getGasPrice() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const gasPrice = await provider.getGasPrice();
+            return gasPrice.mul(120).div(100); // 20% buffer
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if (pageId !== 'home' && contract) {
+                updateDashboards();
             }
         }
 
-        function showStatusMessage(message, type) {
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = message;
-            statusMessage.className = `status-message ${type}`;
-            statusMessage.style.display = 'block';
-            setTimeout(() => {
-                statusMessage.style.display = 'none';
-            }, 5000);
+        function ethToRand(ethAmount) {
+            return ethers.utils.formatEther(ethAmount) * ETH_TO_RAND;
         }
+
+        function randToEth(randAmount) {
+            return ethers.utils.parseEther((randAmount / ETH_TO_RAND).toString());
+        }
+
+        function formatRand(amount) {
+            return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+        }
+
+        async function checkNetwork() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            if (network.chainId !== 80002) { // Amoy chain ID
+                alert('Please switch to Polygon Amoy Testnet in MetaMask');
+                return false;
+            }
+            return true;
+        }
+
+        async function connectWallet() {
+            clearLogAndReset();
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    if (await checkNetwork()) {
+                        const provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner();
+                        contract = new ethers.Contract(contractAddress, contractABI, signer);
+                        const address = await signer.getAddress();
+                        document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                        console.log('Connected to Polygon Amoy');
+                        setupEventListeners();
+                        updateDashboards();
+                    }
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    document.getElementById('status').textContent = 'Connection failed';
+                }
+            } else {
+                alert('Please install MetaMask');
+                document.getElementById('status').textContent = 'MetaMask not detected';
+            }
+        }
+
+        function setupEventListeners() {
+            contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
+                console.log('Invoice created:', { tokenId: tokenId.toString(), amount: ethToRand(amount), issuer, recipient });
+                updateDashboards();
+            });
+
+            contract.on("InvoiceListedForSale", (tokenId, salePrice) => {
+                console.log('Invoice listed for sale:', { tokenId: tokenId.toString(), salePrice: ethToRand(salePrice) });
+                updateDashboards();
+            });
+
+            contract.on("InvoiceSold", (tokenId, buyer, price) => {
+                console.log('Invoice sold:', { tokenId: tokenId.toString(), buyer, price: ethToRand(price) });
+                updateDashboards();
+            });
+        }
+
+        async function updateDashboards() {
+            const currentAddress = await signer.getAddress();
+            updateSmallBusinessDashboard(currentAddress);
+            updateInvestorDashboard(currentAddress);
+            updateBigBusinessDashboard(currentAddress);
+        }
+
+        async function updateSmallBusinessDashboard(currentAddress) {
+            const table = document.getElementById('smallBusinessTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+
+            const addedTokens = new Set();
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[1] === currentAddress && !addedTokens.has(i)) {
+                        addedTokens.add(i);
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[2]);
+                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
+                        row.insertCell(5).textContent = formatRand(ethToRand(invoice[5]));
+                        
+                        const actionCell = row.insertCell(6);
+                        if (!invoice[3] && !invoice[4]) {
+                            const listButton = document.createElement('button');
+                            listButton.textContent = "List for Sale";
+                            listButton.onclick = () => listInvoiceForSale(i);
+                            actionCell.appendChild(listButton);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching invoice ${i}:`, error);
+                    break;
+                }
+            }
+        }
+
+        async function updateInvestorDashboard(currentAddress) {
+            const table = document.getElementById('investorTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[4] && invoice[1] !== currentAddress) {
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
+                        row.insertCell(3).textContent = formatRand(ethToRand(invoice[5]));
+                        
+                        const actionCell = row.insertCell(4);
+                        const buyButton = document.createElement('button');
+                        buyButton.textContent = "Buy";
+                        buyButton.onclick = () => buyInvoice(i, invoice[5]);
+                        actionCell.appendChild(buyButton);
+                    }
+                } catch (error) {
+                    break;
+                }
+            }
+        }
+
+        async function updateBigBusinessDashboard(currentAddress) {
+            const table = document.getElementById('bigBusinessTable');
+            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+
+            for (let i = 0; i < 100; i++) {
+                try {
+                    const invoice = await contract.invoices(i);
+                    if (invoice[2] === currentAddress) {
+                        const row = table.insertRow(-1);
+                        row.insertCell(0).textContent = i;
+                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
+                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
+                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        
+                        const actionCell = row.insertCell(4);
+                        if (!invoice[3]) {
+                            const payButton = document.createElement('button');
+                            payButton.textContent = "Pay";
+                            payButton.onclick = () => payInvoice(i, invoice[0]);
+                            actionCell.appendChild(payButton);
+                        }
+                    }
+                } catch (error) {
+                    break;
+                }
+            }
+        }
+
+        async function createInvoice(event) {
+            event.preventDefault();
+            try {
+                const recipient = document.getElementById('recipient').value;
+                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+                
+                console.log('Sending createInvoice transaction on Amoy...');
+                const gasPrice = await getGasPrice();
+                const tx = await contract.createInvoice(recipient, amount, { gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Transaction confirmed on Amoy:', receipt);
+
+                const event = receipt.events.find(e => e.event === 'InvoiceCreated');
+                if (event) {
+                    const [tokenId, amount, issuer, recipient] = event.args;
+                    document.getElementById('small-business-result').textContent = `Invoice created: Token ID ${tokenId}, Amount ${formatRand(ethToRand(amount))}, Recipient ${recipient}`;
+                } else {
+                    document.getElementById('small-business-result').textContent = `Invoice created on Amoy. Transaction hash: ${receipt.transactionHash}`;
+                }
+                updateDashboards();
+            } catch (error) {
+                console.error('Error creating invoice on Amoy:', error);
+                document.getElementById('small-business-result').textContent = 'Failed to create invoice on Amoy. See console for details.';
+            }
+        }
+
+        async function payInvoice(tokenId, amount) {
+            try {
+                console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
+                
+                const gasPrice = await getGasPrice();
+                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+                
+                const tx = await contract.payInvoice(tokenId, { 
+                    value: amount,
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit
+                });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice paid successfully on Amoy', receipt);
+                document.getElementById('big-business-result').textContent = 'Invoice paid successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error paying invoice on Amoy:', error);
+                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
+            }
+        }
+
+        async function listInvoiceForSale(tokenId) {
+            try {
+                const salePrice = prompt("Enter the sale price in Rands:");
+                if (salePrice === null) return;
+                const salePriceWei = randToEth(salePrice);
+                
+                console.log(`Attempting to list invoice for sale on Amoy. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePriceWei)} MATIC`);
+
+                const gasPrice = await getGasPrice();
+                const tx = await contract.listInvoiceForSale(tokenId, salePriceWei, { gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice listed for sale successfully on Amoy', receipt);
+                document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error listing invoice for sale on Amoy:', error);
+                document.getElementById('small-business-result').textContent = `Failed to list invoice for sale on Amoy: ${error.message}`;
+            }
+        }
+
+        async function buyInvoice(tokenId, price) {
+            try {
+                console.log(`Attempting to buy invoice on Amoy. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(price)} MATIC`);
+                
+                const gasPrice = await getGasPrice();
+                const tx = await contract.buyInvoice(tokenId, { value: price, gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice bought successfully on Amoy', receipt);
+                document.getElementById('investor-result').textContent = 'Invoice bought successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error buying invoice on Amoy:', error);
+                document.getElementById('investor-result').textContent = `Failed to buy invoice on Amoy: ${error.message}`;
+            }
+        }
+
+        function truncateAddress(address) {
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        function clearLogAndReset() {
+            console.clear();
+            console.log('Logs cleared and UI reset');
+
+            document.getElementById('small-business-result').textContent = '';
+            document.getElementById('big-business-result').textContent = '';
+            document.getElementById('investor-result').textContent = '';
+
+            document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+            document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+            document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+            contract = null;
+            signer = null;
+        }
+
+        window.addEventListener('load', clearLogAndReset);
     </script>
 </body>
 </html>
