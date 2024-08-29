@@ -366,6 +366,7 @@
 
                 console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
                 
+                const gasPrice = await getGasPrice();
                 let gasLimit;
                 try {
                     const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
@@ -374,8 +375,7 @@
                     console.error('Error estimating gas:', error);
                     gasLimit = ethers.BigNumber.from(300000); // fallback to a fixed gas limit
                 }
-
-                const gasPrice = await getGasPrice();
+                
                 const tx = await contract.payInvoice(tokenId, { 
                     value: amount,
                     gasPrice: gasPrice,
