@@ -6,6 +6,55 @@
     <title>Martech Fin - Invoice Tokenization Platform</title>
     <link rel="stylesheet" href="indexstyles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <style>
+        @media screen and (max-width: 600px) {
+            table {
+                width: 100%;
+                font-size: 14px;
+            }
+            
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            
+            tr {
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+            }
+            
+            td {
+                border: none;
+                position: relative;
+                padding-left: 50%;
+                text-align: left;
+            }
+            
+            td:before {
+                position: absolute;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                content: attr(data-label);
+                font-weight: bold;
+            }
+            
+            .page {
+                padding: 10px;
+            }
+            
+            input, button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -202,14 +251,15 @@
                     if (invoice[1] === currentAddress && !addedTokens.has(i)) {
                         addedTokens.add(i);
                         const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
-                        row.insertCell(2).textContent = truncateAddress(invoice[2]);
-                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                        row.insertCell(4).textContent = invoice[4] ? "Yes" : "No";
-                        row.insertCell(5).textContent = formatRand(ethToRand(invoice[5]));
+                        row.insertCell(0).innerHTML = `<span data-label="Token ID">${i}</span>`;
+                        row.insertCell(1).innerHTML = `<span data-label="Amount">${formatRand(ethToRand(invoice[0]))}</span>`;
+                        row.insertCell(2).innerHTML = `<span data-label="Recipient">${truncateAddress(invoice[2])}</span>`;
+                        row.insertCell(3).innerHTML = `<span data-label="Paid">${invoice[3] ? "Yes" : "No"}</span>`;
+                        row.insertCell(4).innerHTML = `<span data-label="For Sale">${invoice[4] ? "Yes" : "No"}</span>`;
+                        row.insertCell(5).innerHTML = `<span data-label="Sale Price">${formatRand(ethToRand(invoice[5]))}</span>`;
                         
                         const actionCell = row.insertCell(6);
+                        actionCell.setAttribute('data-label', 'Action');
                         if (!invoice[3] && !invoice[4]) {
                             const listButton = document.createElement('button');
                             listButton.textContent = "List for Sale";
@@ -233,12 +283,13 @@
                     const invoice = await contract.invoices(i);
                     if (invoice[4] && invoice[1] !== currentAddress) {
                         const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
-                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                        row.insertCell(3).textContent = formatRand(ethToRand(invoice[5]));
+                        row.insertCell(0).innerHTML = `<span data-label="Token ID">${i}</span>`;
+                        row.insertCell(1).innerHTML = `<span data-label="Amount">${formatRand(ethToRand(invoice[0]))}</span>`;
+                        row.insertCell(2).innerHTML = `<span data-label="Issuer">${truncateAddress(invoice[1])}</span>`;
+                        row.insertCell(3).innerHTML = `<span data-label="Sale Price">${formatRand(ethToRand(invoice[5]))}</span>`;
                         
                         const actionCell = row.insertCell(4);
+                        actionCell.setAttribute('data-label', 'Action');
                         const buyButton = document.createElement('button');
                         buyButton.textContent = "Buy";
                         buyButton.onclick = () => buyInvoice(i, invoice[5]);
@@ -259,12 +310,13 @@
                     const invoice = await contract.invoices(i);
                     if (invoice[2] === currentAddress) {
                         const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
-                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
+                        row.insertCell(0).innerHTML = `<span data-label="Token ID">${i}</span>`;
+                        row.insertCell(1).innerHTML = `<span data-label="Amount">${formatRand(ethToRand(invoice[0]))}</span>`;
+                        row.insertCell(2).innerHTML = `<span data-label="Issuer">${truncateAddress(invoice[1])}</span>`;
+                        row.insertCell(3).innerHTML = `<span data-label="Paid">${invoice[3] ? "Yes" : "No"}</span>`;
                         
                         const actionCell = row.insertCell(4);
+                        actionCell.setAttribute('data-label', 'Action');
                         if (!invoice[3]) {
                             const payButton = document.createElement('button');
                             payButton.textContent = "Pay";
