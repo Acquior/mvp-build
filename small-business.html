@@ -3,9 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Small Business Dashboard</title>
-    <link rel="stylesheet" href="small-business-styles.css">
-    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <title>Acquior Technology - Small Business Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8f8f8;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header .logo img {
+            height: 40px;
+        }
+
+        .connect-wallet {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+
+        .create-invoice-btn,
+        .list-sale-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .status-message {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            color: #4CAF50;
+        }
+
+        .invoice-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .invoice-card p {
+            margin-bottom: 10px;
+        }
+
+        footer {
+            background-color: white;
+            padding: 15px;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .footer-nav {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .footer-nav .nav-icon img {
+            width: 25px;
+            height: 25px;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -14,72 +126,117 @@
         </div>
         <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
     </header>
-    <main>
+
+    <main role="main">
         <h1>Create Invoice</h1>
-        <form id="invoice-form" onsubmit="createInvoice(event)">
-            <label for="recipient-address">Recipient Address</label>
-            <input type="text" id="recipient-address" placeholder="Enter recipient address" required>
-            <label for="amount-matic">Amount in MATIC</label>
-            <input type="number" id="amount-matic" placeholder="Enter amount in MATIC" required>
+        <form id="createInvoiceForm">
+            <label for="recipientAddress">Recipient Address:</label>
+            <input type="text" id="recipientAddress" required>
+            
+            <label for="amount">Amount in Rands:</label>
+            <input type="number" id="amount" required>
+            
             <button type="submit" class="create-invoice-btn">Create Invoice</button>
         </form>
-        <div class="status-message">
-            Status messages and error notifications will appear here.
-        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
         <section class="invoice-list">
             <h2>Your Invoices</h2>
+            <div id="invoiceList"></div>
         </section>
     </main>
+
     <footer>
         <nav class="footer-nav">
-            <a href="index.html" class="nav-icon">Home</a>
-            <a href="#" class="nav-icon">Invoices</a>
-            <a href="#" class="nav-icon">Menu</a>
+            <a href="index.html" class="nav-icon">
+                <img src="home-icon.png" alt="Home">
+            </a>
+            <a href="#" class="nav-icon">
+                <img src="invoice-icon.png" alt="Invoices">
+            </a>
+            <a href="#" class="nav-icon">
+                <img src="menu-icon.png" alt="Menu">
+            </a>
         </nav>
     </footer>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <script>
-        let provider;
         let signer;
         let contract;
-
-        const contractAddress = '0xe4d5De9eb7b059d6AC206a021aCa3967975658d9';
-        const contractABI = [
-            "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
-            "function getInvoiceDetails(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)"
-        ];
 
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
-                    await ethereum.request({ method: 'eth_requestAccounts' });
-                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
                     signer = provider.getSigner();
+                    const connectWalletButton = document.querySelector('.connect-wallet');
+                    connectWalletButton.textContent = 'Connected';
+                    connectWalletButton.disabled = true;
+                    
+                    // Initialize contract
+                    const contractAddress = 'YOUR_CONTRACT_ADDRESS';
+                    const contractABI = []; // Add your contract ABI here
                     contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    const address = await signer.getAddress();
-                    document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                    
+                    // Load invoices
+                    loadInvoices();
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
                 }
             } else {
-                alert('Please install MetaMask!');
+                alert('Please install MetaMask to use this feature');
             }
         }
 
         async function createInvoice(event) {
             event.preventDefault();
-            const recipient = document.getElementById('recipient-address').value;
-            const amountMatic = document.getElementById('amount-matic').value;
-            const amountWei = ethers.utils.parseEther(amountMatic);
+            if (!contract) {
+                alert('Please connect your wallet first');
+                return;
+            }
+
+            const recipientAddress = document.getElementById('recipientAddress').value;
+            const amount = document.getElementById('amount').value;
 
             try {
-                const tx = await contract.createInvoice(recipient, amountWei);
-                console.log('Transaction sent:', tx.hash);
+                const tx = await contract.createInvoice(recipientAddress, amount);
                 await tx.wait();
-                console.log('Invoice created');
+                document.getElementById('statusMessage').textContent = 'Invoice created successfully!';
+                loadInvoices();
             } catch (error) {
                 console.error('Error creating invoice:', error);
+                document.getElementById('statusMessage').textContent = 'Error creating invoice. Please try again.';
             }
         }
+
+        async function loadInvoices() {
+            if (!contract) return;
+
+            try {
+                const invoices = await contract.getInvoices();
+                const invoiceList = document.getElementById('invoiceList');
+                invoiceList.innerHTML = '';
+
+                invoices.forEach((invoice, index) => {
+                    const invoiceCard = document.createElement('div');
+                    invoiceCard.className = 'invoice-card';
+                    invoiceCard.innerHTML = `
+                        <p><strong>Invoice ID:</strong> ${index}</p>
+                        <p><strong>Recipient:</strong> ${invoice.recipient}</p>
+                        <p><strong>Amount:</strong> ${ethers.utils.formatEther(invoice.amount)} ETH</p>
+                        <p><strong>Status:</strong> ${invoice.paid ? 'Paid' : 'Unpaid'}</p>
+                    `;
+                    invoiceList.appendChild(invoiceCard);
+                });
+            } catch (error) {
+                console.error('Error loading invoices:', error);
+            }
+        }
+
+        document.getElementById('createInvoiceForm').addEventListener('submit', createInvoice);
     </script>
 </body>
 </html>
