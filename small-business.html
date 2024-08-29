@@ -125,6 +125,7 @@
             <img src="logo.png" alt="Acquior Technology Logo">
         </div>
         <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
+        <span id="walletStatus"></span>
     </header>
 
     <main role="main">
@@ -132,10 +133,10 @@
         <form id="createInvoiceForm">
             <label for="recipientAddress">Recipient Address:</label>
             <input type="text" id="recipientAddress" required>
-            
-            <label for="amount">Amount in Rands:</label>
-            <input type="number" id="amount" required>
-            
+
+            <label for="amount">Amount in ETH:</label>
+            <input type="number" id="amount" step="0.000000000000000001" required>
+
             <button type="submit" class="create-invoice-btn">Create Invoice</button>
         </form>
 
@@ -167,6 +168,7 @@
         let contract;
 
         async function connectWallet() {
+            const walletStatus = document.getElementById('walletStatus');
             if (typeof window.ethereum !== 'undefined') {
                 try {
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -175,73 +177,92 @@
                     const connectWalletButton = document.querySelector('.connect-wallet');
                     connectWalletButton.textContent = 'Connected';
                     connectWalletButton.disabled = true;
-                    
+                    walletStatus.textContent = 'Wallet connected successfully!';
+                    walletStatus.style.color = 'green';
+
                     // Initialize contract
                     const contractAddress = '0xe4d5De9eb7b059d6AC206a021aCa3967975658d9';
                     const contractABI = [
                         "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
-            "function payInvoice(uint256 tokenId) public payable",
-            "function isInvoicePaid(uint256 tokenId) public view returns (bool)",
-            "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
-            "function buyInvoice(uint256 tokenId) public payable",
-            "function invoices(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
-            "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)",
-            "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
-            "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"]; // Add your contract ABI here
+                        "function payInvoice(uint256 tokenId) public payable",
+                        "function isInvoicePaid(uint256 tokenId) public view returns (bool)",
+                        "function listInvoiceForSale(uint256 tokenId, uint256 salePrice) public",
+                        "function buyInvoice(uint256 tokenId) public payable",
+                        "function invoices(uint256 tokenId) public view returns (uint256, address, address, bool, bool, uint256)",
+                        "event InvoiceCreated(uint256 indexed tokenId, uint256 amount, address indexed issuer, address indexed recipient)",
+                        "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
+                        "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
+                    ];
                     contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    
+
                     // Load invoices
                     loadInvoices();
                 } catch (error) {
                     console.error('Failed to connect wallet:', error);
+                    walletStatus.textContent = 'Failed to connect wallet. Please try again.';
+                    walletStatus.style.color = 'red';
                 }
             } else {
                 alert('Please install MetaMask to use this feature');
+                walletStatus.textContent = 'MetaMask not detected. Please install it to connect your wallet.';
+                walletStatus.style.color = 'red';
             }
         }
 
         async function createInvoice(event) {
             event.preventDefault();
-            if (!contract) {
-                alert('Please connect your wallet first');
+            const statusMessage = document.getElementById('statusMessage');
+            if (!contract || !signer) {
+                statusMessage.textContent = 'Please connect your wallet first';
+                statusMessage.style.color = 'red';
                 return;
             }
 
             const recipientAddress = document.getElementById('recipientAddress').value;
-            const amount = document.getElementById('amount').value;
+            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
 
             try {
                 const tx = await contract.createInvoice(recipientAddress, amount);
+                statusMessage.textContent = 'Creating invoice... Please wait.';
+                statusMessage.style.color = 'blue';
                 await tx.wait();
-                document.getElementById('statusMessage').textContent = 'Invoice created successfully!';
+                statusMessage.textContent = 'Invoice created successfully!';
+                statusMessage.style.color = 'green';
                 loadInvoices();
             } catch (error) {
                 console.error('Error creating invoice:', error);
-                document.getElementById('statusMessage').textContent = 'Error creating invoice. Please try again.';
+                statusMessage.textContent = 'Error creating invoice. Please try again.';
+                statusMessage.style.color = 'red';
             }
         }
 
         async function loadInvoices() {
-            if (!contract) return;
+            if (!contract || !signer) return;
 
             try {
-                const invoices = await contract.getInvoices();
+                const filter = contract.filters.InvoiceCreated(null, null, await signer.getAddress());
+                const events = await contract.queryFilter(filter);
                 const invoiceList = document.getElementById('invoiceList');
                 invoiceList.innerHTML = '';
 
-                invoices.forEach((invoice, index) => {
+                for (let event of events) {
+                    const [tokenId, amount, issuer, recipient] = event.args;
+                    const isPaid = await contract.isInvoicePaid(tokenId);
+                    
                     const invoiceCard = document.createElement('div');
                     invoiceCard.className = 'invoice-card';
                     invoiceCard.innerHTML = `
-                        <p><strong>Invoice ID:</strong> ${index}</p>
-                        <p><strong>Recipient:</strong> ${invoice.recipient}</p>
-                        <p><strong>Amount:</strong> ${ethers.utils.formatEther(invoice.amount)} ETH</p>
-                        <p><strong>Status:</strong> ${invoice.paid ? 'Paid' : 'Unpaid'}</p>
+                        <p><strong>Invoice ID:</strong> ${tokenId}</p>
+                        <p><strong>Recipient:</strong> ${recipient}</p>
+                        <p><strong>Amount:</strong> ${ethers.utils.formatEther(amount)} ETH</p>
+                        <p><strong>Status:</strong> ${isPaid ? 'Paid' : 'Unpaid'}</p>
                     `;
                     invoiceList.appendChild(invoiceCard);
-                });
+                }
             } catch (error) {
                 console.error('Error loading invoices:', error);
+                document.getElementById('statusMessage').textContent = 'Error loading invoices. Please try again.';
+                document.getElementById('statusMessage').style.color = 'red';
             }
         }
 
