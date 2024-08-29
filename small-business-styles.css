@@ -25,36 +25,13 @@ header .logo img {
     height: 40px;
 }
 
-.menu-btn {
-    background: none;
+.connect-wallet {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
     border: none;
+    border-radius: 20px;
     cursor: pointer;
-}
-
-.menu-icon {
-    width: 25px;
-    height: 3px;
-    background-color: #4CAF50;
-    display: block;
-    position: relative;
-}
-
-.menu-icon::before,
-.menu-icon::after {
-    content: '';
-    position: absolute;
-    width: 25px;
-    height: 3px;
-    background-color: #4CAF50;
-    left: 0;
-}
-
-.menu-icon::before {
-    top: -8px;
-}
-
-.menu-icon::after {
-    bottom: -8px;
 }
 
 main {
@@ -62,7 +39,7 @@ main {
     flex-grow: 1;
 }
 
-h1, h2 {
+h1 {
     margin-bottom: 20px;
     color: #333;
 }
@@ -86,8 +63,7 @@ input[type="number"] {
     border-radius: 20px;
 }
 
-.create-invoice-btn,
-.list-sale-btn {
+.create-invoice-btn {
     background-color: #4CAF50;
     color: white;
     padding: 10px 20px;
@@ -106,6 +82,10 @@ input[type="number"] {
     color: #4CAF50;
 }
 
+.invoice-list {
+    margin-top: 20px;
+}
+
 .invoice-card {
     background-color: white;
     border-radius: 10px;
@@ -114,13 +94,10 @@ input[type="number"] {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.invoice-card p {
-    margin-bottom: 10px;
-}
-
 footer {
     background-color: white;
     padding: 15px;
+    text-align: center;
     box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -129,7 +106,8 @@ footer {
     justify-content: space-around;
 }
 
-.footer-nav .nav-icon img {
-    width: 25px;
-    height: 25px;
+.footer-nav a {
+    text-decoration: none;
+    color: #4CAF50;
+    font-weight: bold;
 }
