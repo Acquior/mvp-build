@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Martech Fin - Invoice Tokenization Platform</title>
     <link rel="stylesheet" href="indexstyles.css">
+    <link rel="stylesheet" href="business-dashboard.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
 </head>
 <body>
@@ -64,9 +65,27 @@
         </div>
 
         <div id="big-business" class="page">
-            <h2>Big Business Dashboard</h2>
-            <h3>Invoices to Pay</h3>
-            <table id="bigBusinessTable"></table>
+            <h1 class="dashboard-title">Business Dashboard</h1>
+
+            <!-- Invoices to Pay Section -->
+            <section class="invoices-to-pay">
+                <h2>Invoices to Pay</h2>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Invoices">
+                </div>
+
+                <!-- Invoice Cards will be dynamically added here -->
+                <div id="invoiceCardsContainer"></div>
+            </section>
+
+            <!-- Recent Transactions Section -->
+            <section class="recent-transactions">
+                <h2>Recent Transactions</h2>
+
+                <!-- Transaction Cards will be dynamically added here -->
+                <div id="transactionCardsContainer"></div>
+            </section>
+
             <div id="big-business-result" class="result"></div>
         </div>
 
@@ -251,31 +270,63 @@
         }
 
         async function updateBigBusinessDashboard(currentAddress) {
-            const table = document.getElementById('bigBusinessTable');
-            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+            const invoiceCardsContainer = document.getElementById('invoiceCardsContainer');
+            const transactionCardsContainer = document.getElementById('transactionCardsContainer');
+            
+            invoiceCardsContainer.innerHTML = '';
+            transactionCardsContainer.innerHTML = '';
+
+            const transactions = [];
 
             for (let i = 0; i < 100; i++) {
                 try {
                     const invoice = await contract.invoices(i);
                     if (invoice[2] === currentAddress) {
-                        const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
-                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                        
-                        const actionCell = row.insertCell(4);
-                        if (!invoice[3]) {
-                            const payButton = document.createElement('button');
-                            payButton.textContent = "Pay";
-                            payButton.onclick = () => payInvoice(i, invoice[0]);
-                            actionCell.appendChild(payButton);
+                        const invoiceCard = createInvoiceCard(i, invoice);
+                        invoiceCardsContainer.appendChild(invoiceCard);
+
+                        if (invoice[3]) { // If paid
+                            transactions.push({
+                                date: new Date(), // You might want to store the payment date in the contract
+                                amount: invoice[0],
+                                recipient: invoice[1]
+                            });
                         }
                     }
                 } catch (error) {
                     break;
                 }
             }
+
+            // Sort transactions by date (most recent first) and display the top 3
+            transactions.sort((a, b) => b.date - a.date);
+            transactions.slice(0, 3).forEach(transaction => {
+                const transactionCard = createTransactionCard(transaction);
+                transactionCardsContainer.appendChild(transactionCard);
+            });
+        }
+
+        function createInvoiceCard(tokenId, invoice) {
+            const card = document.createElement('div');
+            card.className = 'invoice-card';
+            card.innerHTML = `
+                <p><strong>Token ID:</strong> ${tokenId}</p>
+                <p class="invoice-amount">${formatRand(ethToRand(invoice[0]))}</p>
+                <p class="invoice-due">Due Date: N/A</p>
+                ${!invoice[3] ? `<button class="pay-btn" onclick="payInvoice(${tokenId}, '${invoice[0]}')">Pay</button>` : '<p>Paid</p>'}
+            `;
+            return card;
+        }
+
+        function createTransactionCard(transaction) {
+            const card = document.createElement('div');
+            card.className = 'transaction-card';
+            card.innerHTML = `
+                <p><strong>${transaction.date.toISOString().split('T')[0]}</strong></p>
+                <p class="transaction-amount">${formatRand(ethToRand(transaction.amount))}</p>
+                <p class="transaction-recipient">Recipient: ${truncateAddress(transaction.recipient)}</p>
+            `;
+            return card;
         }
 
         async function createInvoice(event) {
@@ -307,12 +358,24 @@
 
         async function payInvoice(tokenId, amount) {
             try {
+                const balance = await signer.getBalance();
+                const amountBN = ethers.BigNumber.from(amount);
+                if (balance.lt(amountBN)) {
+                    throw new Error(`Insufficient funds. Balance: ${ethers.utils.formatEther(balance)} MATIC, Required: ${ethers.utils.formatEther(amountBN)} MATIC`);
+                }
+
                 console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
                 
+                let gasLimit;
+                try {
+                    const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+                    gasLimit = estimatedGas.mul(110).div(100); // 10% buffer
+                } catch (error) {
+                    console.error('Error estimating gas:', error);
+                    gasLimit = ethers.BigNumber.from(300000); // fallback to a fixed gas limit
+                }
+
                 const gasPrice = await getGasPrice();
-                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
-                
                 const tx = await contract.payInvoice(tokenId, { 
                     value: amount,
                     gasPrice: gasPrice,
@@ -325,7 +388,11 @@
                 updateDashboards();
             } catch (error) {
                 console.error('Error paying invoice on Amoy:', error);
-                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
+                let errorMessage = error.message;
+                if (error.data && error.data.message) {
+                    errorMessage += ` - ${error.data.message}`;
+                }
+                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${errorMessage}`;
             }
         }
 
