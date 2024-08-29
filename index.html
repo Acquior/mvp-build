@@ -4,135 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Martech Fin - Invoice Tokenization Platform</title>
+    <link rel="stylesheet" href="indexstyles.css">
+    <link rel="stylesheet" href="business-dashboard.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 1rem;
-        }
-        nav {
-            background-color: #333;
-            color: white;
-            padding: 0.5rem;
-        }
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        nav ul li {
-            display: inline;
-            margin-right: 10px;
-        }
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-        }
-        .container {
-            padding: 20px;
-        }
-        .page {
-            display: none;
-        }
-        .active {
-            display: block;
-        }
-        button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-        input[type=text], input[type=number] {
-            width: 100%;
-            padding: 12px 20px;
-            margin: 8px 0;
-            display: inline-block;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .result {
-            background-color: #f2f2f2;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-    </style>
 </head>
 <body>
     <header>
-        <h1>Martech Fin - Invoice Tokenization Platform</h1>
-    </header>
-    <nav>
-        <ul>
-            <li><a href="#" onclick="showPage('home')">Home</a></li>
-            <li><a href="#" onclick="showPage('small-business')">Small Business</a></li>
-            <li><a href="#" onclick="showPage('big-business')">Big Business</a></li>
-            <li><a href="#" onclick="showPage('investor')">Investor</a></li>
-        </ul>
-    </nav>
-    <div class="container">
-        <div id="home" class="page active">
-            <h2>Welcome to Martech Fin</h2>
-            <p>Connect your wallet to get started:</p>
-            <button onclick="connectWallet()">Connect Wallet</button>
-            <p>Status: <span id="status">Not connected</span></p>
+        <div class="logo">
+            <img src="logo.png" alt="Acquior Technology Logo">
         </div>
+        <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
+    </header>
+
+    <main>
+        <div id="home" class="page active">
+            <a href="#" class="card" onclick="showPage('small-business')">
+                <div class="icon">
+                    <img src="small-business-icon.png" alt="Small Business Icon">
+                </div>
+                <div class="content">
+                    <h2>Small Business</h2>
+                    <p>Empowering small businesses with financial solutions tailored to their needs.</p>
+                </div>
+            </a>
+
+            <a href="#" class="card" onclick="showPage('investor')">
+                <div class="icon">
+                    <img src="investor-icon.png" alt="Investor Icon">
+                </div>
+                <div class="content">
+                    <h2>Investor</h2>
+                    <p>Comprehensive tools and insights for savvy investors.</p>
+                </div>
+            </a>
+
+            <a href="#" class="card" onclick="showPage('big-business')">
+                <div class="icon">
+                    <img src="big-business-icon.png" alt="Big Business Icon">
+                </div>
+                <div class="content">
+                    <h2>Big Business</h2>
+                    <p>Robust financial solutions for large enterprises.</p>
+                </div>
+            </a>
+        </div>
+
         <div id="small-business" class="page">
             <h2>Small Business Dashboard</h2>
             <h3>Create Invoice</h3>
-            <input id="recipient" type="text" placeholder="Recipient address">
-            <input id="amount" type="number" placeholder="Amount in Rands">
-            <button onclick="createInvoice()">Create Invoice</button>
+            <form id="invoice-form" onsubmit="createInvoice(event)">
+                <input id="recipient" type="text" placeholder="Recipient address">
+                <input id="amount" type="number" placeholder="Amount in Rands">
+                <button type="submit">Create Invoice</button>
+            </form>
             <div id="small-business-result" class="result"></div>
             <h3>Your Invoices</h3>
-            <table id="smallBusinessTable"></table>
+            <div class="invoice-list">
+                <table id="smallBusinessTable"></table>
+            </div>
         </div>
+
         <div id="big-business" class="page">
-            <h2>Big Business Dashboard</h2>
-            <h3>Invoices to Pay</h3>
-            <table id="bigBusinessTable"></table>
+            <h1 class="dashboard-title">Business Dashboard</h1>
+
+            <!-- Invoices to Pay Section -->
+            <section class="invoices-to-pay">
+                <h2>Invoices to Pay</h2>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Invoices">
+                </div>
+
+                <!-- Invoice Cards will be dynamically added here -->
+                <div id="invoiceCardsContainer"></div>
+            </section>
+
+            <!-- Recent Transactions Section -->
+            <section class="recent-transactions">
+                <h2>Recent Transactions</h2>
+
+                <!-- Transaction Cards will be dynamically added here -->
+                <div id="transactionCardsContainer"></div>
+            </section>
+
             <div id="big-business-result" class="result"></div>
         </div>
+
         <div id="investor" class="page">
             <h2>Investor Dashboard</h2>
             <h3>Invoices Available for Purchase</h3>
             <table id="investorTable"></table>
             <div id="investor-result" class="result"></div>
         </div>
-    </div>
+    </main>
+
+    <footer>
+        <nav class="footer-nav">
+            <a href="#" onclick="showPage('home')" class="nav-icon">Home</a>
+            <a href="#" class="nav-icon">Invoices</a>
+            <a href="#" class="nav-icon">Menu</a>
+        </nav>
+    </footer>
+
     <script>
         let contract;
         let signer;
@@ -153,10 +125,11 @@
         const ETH_TO_RAND = 1000000; // 1 ETH = 1,000,000 Rand
 
         async function getGasPrice() {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const gasPrice = await provider.getGasPrice();
-    return gasPrice.mul(120).div(100); // 20% buffer
-}
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const gasPrice = await provider.getGasPrice();
+            return gasPrice.mul(120).div(100); // 20% buffer
+        }
+
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -178,14 +151,14 @@
         }
 
         async function checkNetwork() {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const network = await provider.getNetwork();
-    if (network.chainId !== 80002) { // Amoy chain ID
-        alert('Please switch to Polygon Amoy Testnet in MetaMask');
-        return false;
-    }
-    return true;
-}
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            if (network.chainId !== 80002) { // Amoy chain ID
+                alert('Please switch to Polygon Amoy Testnet in MetaMask');
+                return false;
+            }
+            return true;
+        }
 
         async function connectWallet() {
             clearLogAndReset();
@@ -196,8 +169,9 @@
                         const provider = new ethers.providers.Web3Provider(window.ethereum);
                         signer = provider.getSigner();
                         contract = new ethers.Contract(contractAddress, contractABI, signer);
-                        document.getElementById('status').textContent = 'Connected';
-                        console.log('Connected to Sepolia');
+                        const address = await signer.getAddress();
+                        document.querySelector('.connect-wallet').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                        console.log('Connected to Polygon Amoy');
                         setupEventListeners();
                         updateDashboards();
                     }
@@ -296,158 +270,175 @@
         }
 
         async function updateBigBusinessDashboard(currentAddress) {
-            const table = document.getElementById('bigBusinessTable');
-            table.innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+            const invoiceCardsContainer = document.getElementById('invoiceCardsContainer');
+            const transactionCardsContainer = document.getElementById('transactionCardsContainer');
+            
+            invoiceCardsContainer.innerHTML = '';
+            transactionCardsContainer.innerHTML = '';
+
+            const transactions = [];
 
             for (let i = 0; i < 100; i++) {
                 try {
                     const invoice = await contract.invoices(i);
                     if (invoice[2] === currentAddress) {
-                        const row = table.insertRow(-1);
-                        row.insertCell(0).textContent = i;
-                        row.insertCell(1).textContent = formatRand(ethToRand(invoice[0]));
-                        row.insertCell(2).textContent = truncateAddress(invoice[1]);
-                        row.insertCell(3).textContent = invoice[3] ? "Yes" : "No";
-                        
-                        const actionCell = row.insertCell(4);
-                        if (!invoice[3]) {
-                            const payButton = document.createElement('button');
-                            payButton.textContent = "Pay";
-                            payButton.onclick = () => payInvoice(i, invoice[0]);
-                            actionCell.appendChild(payButton);
+                        const invoiceCard = createInvoiceCard(i, invoice);
+                        invoiceCardsContainer.appendChild(invoiceCard);
+
+                        if (invoice[3]) { // If paid
+                            transactions.push({
+                                date: new Date(), // You might want to store the payment date in the contract
+                                amount: invoice[0],
+                                recipient: invoice[1]
+                            });
                         }
                     }
                 } catch (error) {
                     break;
                 }
             }
+
+            // Sort transactions by date (most recent first) and display the top 3
+            transactions.sort((a, b) => b.date - a.date);
+            transactions.slice(0, 3).forEach(transaction => {
+                const transactionCard = createTransactionCard(transaction);
+                transactionCardsContainer.appendChild(transactionCard);
+            });
         }
 
-        async function getGasPrice() {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const gasPrice = await provider.getGasPrice();
-    return gasPrice.mul(120).div(100); // 20% buffer
-}
-
-async function createInvoice() {
-    try {
-        const recipient = document.getElementById('recipient').value;
-        const amount = ethers.utils.parseEther(document.getElementById('amount').value);
-        
-        console.log('Sending createInvoice transaction on Amoy...');
-        const gasPrice = await getGasPrice();
-        const tx = await contract.createInvoice(recipient, amount, { gasPrice });
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Transaction confirmed on Amoy:', receipt);
-
-        const event = receipt.events.find(e => e.event === 'InvoiceCreated');
-        if (event) {
-            const [tokenId, amount, issuer, recipient] = event.args;
-            updateUIAfterInvoiceCreation(tokenId, amount, issuer, recipient);
-        } else {
-            document.getElementById('result').textContent = `Invoice created on Amoy. Transaction hash: ${receipt.transactionHash}`;
+        function createInvoiceCard(tokenId, invoice) {
+            const card = document.createElement('div');
+            card.className = 'invoice-card';
+            card.innerHTML = `
+                <p><strong>Token ID:</strong> ${tokenId}</p>
+                <p class="invoice-amount">${formatRand(ethToRand(invoice[0]))}</p>
+                <p class="invoice-due">Due Date: N/A</p>
+                ${!invoice[3] ? `<button class="pay-btn" onclick="payInvoice(${tokenId}, '${invoice[0]}')">Pay</button>` : '<p>Paid</p>'}
+            `;
+            return card;
         }
-    } catch (error) {
-        console.error('Error creating invoice on Amoy:', error);
-        document.getElementById('result').textContent = 'Failed to create invoice on Amoy. See console for details.';
-    }
-}
 
-async function payInvoice() {
-    try {
-        const tokenId = document.getElementById('payTokenId').value;
-        const amount = ethers.utils.parseEther(document.getElementById('payAmount').value);
-        console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
-        
-        const gasPrice = await getGasPrice();
-        const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
-        const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
-        
-        const tx = await contract.payInvoice(tokenId, { 
-            value: amount,
-            gasPrice: gasPrice,
-            gasLimit: gasLimit
-        });
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Invoice paid successfully on Amoy', receipt);
-        document.getElementById('result').textContent = 'Invoice paid successfully on Amoy!';
-    } catch (error) {
-        console.error('Error paying invoice on Amoy:', error);
-        document.getElementById('result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
-    }
-}
-
-async function listInvoiceForSale() {
-    try {
-        const tokenId = document.getElementById('listTokenId').value;
-        const salePrice = ethers.utils.parseEther(document.getElementById('salePrice').value);
-        
-        console.log(`Attempting to list invoice for sale on Amoy. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePrice)} MATIC`);
-
-        const gasPrice = await getGasPrice();
-        const tx = await contract.listInvoiceForSale(tokenId, salePrice, { gasPrice });
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Invoice listed for sale successfully on Amoy', receipt);
-        document.getElementById('result').textContent = 'Invoice listed for sale successfully on Amoy!';
-    } catch (error) {
-        console.error('Error listing invoice for sale on Amoy:', error);
-        let errorMessage = 'Failed to list invoice for sale on Amoy';
-        if (error.message.includes("Only the owner can list the invoice for sale")) {
-            errorMessage = "You are not the owner of this invoice";
-        } else if (error.message.includes("Paid invoices cannot be sold")) {
-            errorMessage = "This invoice has already been paid and cannot be sold";
-        } else if (error.message.includes("Invoice is already listed for sale")) {
-            errorMessage = "This invoice is already listed for sale";
-        } else if (error.message.includes("Sale price must be greater than zero")) {
-            errorMessage = "The sale price must be greater than zero";
+        function createTransactionCard(transaction) {
+            const card = document.createElement('div');
+            card.className = 'transaction-card';
+            card.innerHTML = `
+                <p><strong>${transaction.date.toISOString().split('T')[0]}</strong></p>
+                <p class="transaction-amount">${formatRand(ethToRand(transaction.amount))}</p>
+                <p class="transaction-recipient">Recipient: ${truncateAddress(transaction.recipient)}</p>
+            `;
+            return card;
         }
-        document.getElementById('result').textContent = errorMessage;
-    }
-}
 
-async function buyInvoice() {
-    try {
-        const tokenId = document.getElementById('buyTokenId').value;
-        const amount = ethers.utils.parseEther(document.getElementById('buyAmount').value);
-        console.log(`Attempting to buy invoice on Amoy. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(amount)} MATIC`);
-        
-        const gasPrice = await getGasPrice();
-        const tx = await contract.buyInvoice(tokenId, { value: amount, gasPrice });
-        console.log('Transaction sent, waiting for confirmation...');
-        const receipt = await tx.wait();
-        console.log('Invoice bought successfully on Amoy', receipt);
-        document.getElementById('result').textContent = 'Invoice bought successfully on Amoy!';
-    } catch (error) {
-        console.error('Error buying invoice on Amoy:', error);
-        document.getElementById('result').textContent = `Failed to buy invoice on Amoy: ${error.message}`;
-    }
-}
+        async function createInvoice(event) {
+            event.preventDefault();
+            try {
+                const recipient = document.getElementById('recipient').value;
+                const amount = ethers.utils.parseEther(document.getElementById('amount').value);
+                
+                console.log('Sending createInvoice transaction on Amoy...');
+                const gasPrice = await getGasPrice();
+                const tx = await contract.createInvoice(recipient, amount, { gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Transaction confirmed on Amoy:', receipt);
 
-function truncateAddress(address) {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+                const event = receipt.events.find(e => e.event === 'InvoiceCreated');
+                if (event) {
+                    const [tokenId, amount, issuer, recipient] = event.args;
+                    document.getElementById('small-business-result').textContent = `Invoice created: Token ID ${tokenId}, Amount ${formatRand(ethToRand(amount))}, Recipient ${recipient}`;
+                } else {
+                    document.getElementById('small-business-result').textContent = `Invoice created on Amoy. Transaction hash: ${receipt.transactionHash}`;
+                }
+                updateDashboards();
+            } catch (error) {
+                console.error('Error creating invoice on Amoy:', error);
+                document.getElementById('small-business-result').textContent = 'Failed to create invoice on Amoy. See console for details.';
+            }
+        }
 
-function clearLogAndReset() {
-    console.clear();
-    console.log('Logs cleared and UI reset');
+        async function payInvoice(tokenId, amount) {
+            try {
+                console.log(`Attempting to pay invoice on Amoy. Token ID: ${tokenId}, Amount: ${ethers.utils.formatEther(amount)} MATIC`);
+                
+                const gasPrice = await getGasPrice();
+                const estimatedGas = await contract.estimateGas.payInvoice(tokenId, { value: amount });
+                const gasLimit = estimatedGas.mul(120).div(100); // 20% buffer
+                
+                const tx = await contract.payInvoice(tokenId, { 
+                    value: amount,
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit
+                });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice paid successfully on Amoy', receipt);
+                document.getElementById('big-business-result').textContent = 'Invoice paid successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error paying invoice on Amoy:', error);
+                document.getElementById('big-business-result').textContent = `Failed to pay invoice on Amoy: ${error.message}`;
+            }
+        }
 
-    document.getElementById('status').textContent = 'Not connected';
-    document.getElementById('small-business-result').textContent = '';
-    document.getElementById('big-business-result').textContent = '';
-    document.getElementById('investor-result').textContent = '';
+        async function listInvoiceForSale(tokenId) {
+            try {
+                const salePrice = prompt("Enter the sale price in Rands:");
+                if (salePrice === null) return;
+                const salePriceWei = randToEth(salePrice);
+                
+                console.log(`Attempting to list invoice for sale on Amoy. Token ID: ${tokenId}, Sale Price: ${ethers.utils.formatEther(salePriceWei)} MATIC`);
 
-    document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
-    document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
-    document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+                const gasPrice = await getGasPrice();
+                const tx = await contract.listInvoiceForSale(tokenId, salePriceWei, { gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice listed for sale successfully on Amoy', receipt);
+                document.getElementById('small-business-result').textContent = 'Invoice listed for sale successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error listing invoice for sale on Amoy:', error);
+                document.getElementById('small-business-result').textContent = `Failed to list invoice for sale on Amoy: ${error.message}`;
+            }
+        }
 
-    contract = null;
-    signer = null;
-}
+        async function buyInvoice(tokenId, price) {
+            try {
+                console.log(`Attempting to buy invoice on Amoy. Token ID: ${tokenId}, Price: ${ethers.utils.formatEther(price)} MATIC`);
+                
+                const gasPrice = await getGasPrice();
+                const tx = await contract.buyInvoice(tokenId, { value: price, gasPrice });
+                console.log('Transaction sent, waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Invoice bought successfully on Amoy', receipt);
+                document.getElementById('investor-result').textContent = 'Invoice bought successfully on Amoy!';
+                updateDashboards();
+            } catch (error) {
+                console.error('Error buying invoice on Amoy:', error);
+                document.getElementById('investor-result').textContent = `Failed to buy invoice on Amoy: ${error.message}`;
+            }
+        }
 
-window.addEventListener('load', clearLogAndReset);
+        function truncateAddress(address) {
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        function clearLogAndReset() {
+            console.clear();
+            console.log('Logs cleared and UI reset');
+
+            document.getElementById('small-business-result').textContent = '';
+            document.getElementById('big-business-result').textContent = '';
+            document.getElementById('investor-result').textContent = '';
+
+            document.getElementById('smallBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Recipient</th><th>Paid</th><th>For Sale</th><th>Sale Price</th><th>Action</th></tr>';
+            document.getElementById('bigBusinessTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Paid</th><th>Action</th></tr>';
+            document.getElementById('investorTable').innerHTML = '<tr><th>Token ID</th><th>Amount</th><th>Issuer</th><th>Sale Price</th><th>Action</th></tr>';
+
+            contract = null;
+            signer = null;
+        }
+
+        window.addEventListener('load', clearLogAndReset);
     </script>
 </body>
 </html>
