@@ -83,6 +83,38 @@
             text-align: center;
         }
 
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        tr {
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        td {
+            padding: 10px 15px;
+            text-align: left;
+        }
+
+        td strong {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
         @media screen and (max-width: 600px) {
             .dashboard-card {
                 width: 100%;
@@ -100,19 +132,13 @@
             }
             
             tr {
-                display: block;
+                display: flex;
+                flex-wrap: wrap;
                 margin-bottom: 20px;
-                background-color: #f8f8f8;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             
             td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 15px;
-                text-align: right;
+                flex: 1 1 100%;
                 border-bottom: 1px solid #eee;
             }
             
@@ -120,34 +146,15 @@
                 border-bottom: none;
             }
             
-            td:before {
-                content: attr(data-label);
-                font-weight: bold;
-                text-align: left;
-                padding-right: 10px;
+            td strong {
+                display: inline-block;
+                width: 100px;
+                margin-bottom: 5px;
             }
             
-            .page {
-                padding: 15px;
-            }
-            
-            input, button {
-                width: 100%;
-                margin-bottom: 10px;
-                padding: 10px;
-                box-sizing: border-box;
-            }
-
             button {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-
-            button:hover {
-                background-color: #45a049;
+                width: auto;
+                margin-top: 10px;
             }
         }
     </style>
@@ -385,17 +392,36 @@
                     const invoice = await contract.invoices(i);
                     if (invoice[4] && invoice[1] !== currentAddress) {
                         const row = table.insertRow(-1);
-                        row.insertCell(0).innerHTML = `<td data-label="Token ID">${i}</td>`;
-                        row.insertCell(1).innerHTML = `<td data-label="Issuer">${truncateAddress(invoice[1])}</td>`;
-                        row.insertCell(2).innerHTML = `<td data-label="Amount">${formatRand(ethToRand(invoice[0]))}</td>`;
-                        row.insertCell(3).innerHTML = `<td data-label="Sale Price">${formatRand(ethToRand(invoice[5]))}</td>`;
                         
+                        // Token ID
+                        row.insertCell(0).innerHTML = `<td data-label="Token ID"><strong>Token ID:</strong> ${i}</td>`;
+                        
+                        // Wallet Address (Issuer)
+                        row.insertCell(1).innerHTML = `<td data-label="Wallet Address"><strong>Issuer:</strong> ${truncateAddress(invoice[1])}</td>`;
+                        
+                        // Amount
+                        row.insertCell(2).innerHTML = `<td data-label="Amount"><strong>Amount:</strong> ${formatRand(ethToRand(invoice[0]))}</td>`;
+                        
+                        // Sale Price
+                        row.insertCell(3).innerHTML = `<td data-label="Sale Price"><strong>Sale Price:</strong> ${formatRand(ethToRand(invoice[5]))}</td>`;
+                        
+                        // Buy Button
                         const actionCell = row.insertCell(4);
                         actionCell.setAttribute('data-label', 'Action');
                         const buyButton = document.createElement('button');
                         buyButton.textContent = "Buy";
                         buyButton.onclick = () => buyInvoice(i, invoice[5]);
                         actionCell.appendChild(buyButton);
+                        
+                        // Apply styling to the button
+                        buyButton.style.backgroundColor = '#4CAF50';
+                        buyButton.style.color = 'white';
+                        buyButton.style.border = 'none';
+                        buyButton.style.padding = '5px 10px';
+                        buyButton.style.cursor = 'pointer';
+                        buyButton.style.borderRadius = '4px';
+                        buyButton.style.fontSize = '14px';
+                        buyButton.style.width = 'auto';
                     }
                 } catch (error) {
                     console.error(`Error fetching invoice ${i}:`, error);
@@ -413,12 +439,15 @@
                     const invoice = await contract.invoices(i);
                     if (invoice[2] === currentAddress) {
                         const row = table.insertRow(-1);
-                        row.insertCell(0).innerHTML = `<td data-label="Token ID">${i}</td>`;
-                        row.insertCell(1).innerHTML = `<td data-label="Amount">${formatRand(ethToRand(invoice[0]))}</td>`;
-                        row.insertCell(2).innerHTML = `<td data-label="Issuer">${truncateAddress(invoice[1])}</td>`;
-                        row.insertCell(3).innerHTML = `<td data-label="Paid">${invoice[3] ? "Yes" : "No"}</td>`;
+                        row.insertCell(0).innerHTML = `<td data-label="Token ID"><strong>Token ID:</strong> ${i}</td>`;
+                        row.insertCell(1).innerHTML = `<td data-label="Amount"><strong>Amount:</strong> ${formatRand(ethToRand(invoice[0]))}</td>`;
+                        row.insertCell(2).innerHTML = `<td data-label="Issuer"><strong>Issuer:</strong> ${truncateAddress(invoice[1])}</td>`;
+                        row.insertCell(3).innerHTML = `<td data-label="Recipient"><strong>Recipient:</strong> ${truncateAddress(invoice[2])}</td>`;
+                        row.insertCell(4).innerHTML = `<td data-label="Paid"><strong>Paid:</strong> ${invoice[3] ? "Yes" : "No"}</td>`;
+                        row.insertCell(5).innerHTML = `<td data-label="For Sale"><strong>For Sale:</strong> ${invoice[4] ? "Yes" : "No"}</td>`;
+                        row.insertCell(6).innerHTML = `<td data-label="Sale Price"><strong>Sale Price:</strong> ${formatRand(ethToRand(invoice[5]))}</td>`;
                         
-                        const actionCell = row.insertCell(4);
+                        const actionCell = row.insertCell(7);
                         actionCell.setAttribute('data-label', 'Action');
                         if (!invoice[3]) {
                             const payButton = document.createElement('button');
