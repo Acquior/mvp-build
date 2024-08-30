@@ -7,67 +7,85 @@
     <link rel="stylesheet" href="indexstyles.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
     <style>
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 10px;
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
         }
 
-        tr {
+        main {
+            flex: 1;
+        }
+
+        .welcome-message {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-card {
+            width: 30%;
             background-color: #f8f8f8;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        td {
-            padding: 10px 15px;
-            text-align: left;
-        }
-
-        td strong {
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 5px 10px;
+            padding: 20px;
+            margin-bottom: 20px;
             cursor: pointer;
-            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-card .icon {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .dashboard-card .icon img {
+            width: 60px;
+            height: 60px;
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover .icon img {
+            transform: scale(1.1);
+        }
+
+        .dashboard-card h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .dashboard-card:hover h2 {
+            color: #4CAF50;
+        }
+
+        .dashboard-card p {
+            text-align: center;
             font-size: 14px;
         }
 
+        footer {
+            background-color: #f8f8f8;
+            padding: 10px 0;
+            text-align: center;
+        }
+
         @media screen and (max-width: 600px) {
-            thead {
-                display: none;
-            }
-            
-            tr {
-                display: flex;
-                flex-wrap: wrap;
-                margin-bottom: 20px;
-            }
-            
-            td {
-                flex: 1 1 100%;
-                border-bottom: 1px solid #eee;
-            }
-            
-            td:last-child {
-                border-bottom: none;
-            }
-            
-            td strong {
-                display: inline-block;
-                width: 100px;
-                margin-bottom: 5px;
-            }
-            
-            button {
-                width: auto;
-                margin-top: 10px;
+            .dashboard-card {
+                width: 100%;
             }
         }
     </style>
@@ -82,35 +100,32 @@
 
     <main>
         <div id="home" class="page active">
-            <a href="#" class="card" onclick="showPage('small-business')">
-                <div class="icon">
-                    <img src="small-business-icon.png" alt="Small Business Icon">
-                </div>
-                <div class="content">
+            <div class="welcome-message">Welcome to Acquior Fin</div>
+            <div class="dashboard-container">
+                <div class="dashboard-card" onclick="showPage('small-business')">
+                    <div class="icon">
+                        <img src="small-business-icon.png" alt="Small Business Icon">
+                    </div>
                     <h2>Small Business</h2>
                     <p>Empowering small businesses with financial solutions tailored to their needs.</p>
                 </div>
-            </a>
 
-            <a href="#" class="card" onclick="showPage('investor')">
-                <div class="icon">
-                    <img src="investor-icon.png" alt="Investor Icon">
-                </div>
-                <div class="content">
+                <div class="dashboard-card" onclick="showPage('investor')">
+                    <div class="icon">
+                        <img src="investor-icon.png" alt="Investor Icon">
+                    </div>
                     <h2>Investor</h2>
                     <p>Comprehensive tools and insights for savvy investors.</p>
                 </div>
-            </a>
 
-            <a href="#" class="card" onclick="showPage('big-business')">
-                <div class="icon">
-                    <img src="big-business-icon.png" alt="Big Business Icon">
-                </div>
-                <div class="content">
+                <div class="dashboard-card" onclick="showPage('big-business')">
+                    <div class="icon">
+                        <img src="big-business-icon.png" alt="Big Business Icon">
+                    </div>
                     <h2>Big Business</h2>
                     <p>Robust financial solutions for large enterprises.</p>
                 </div>
-            </a>
+            </div>
         </div>
 
         <div id="small-business" class="page">
@@ -152,9 +167,7 @@
     </footer>
 
     <script>
-        let contract;
-        let signer;
-
+        // Contract setup
         const contractAddress = '0x524b0F673D311C35368eca5FB03957d9701D37AA';
         const contractABI = [
             "function createInvoice(address recipient, uint256 amount) public returns (uint256)",
@@ -167,21 +180,19 @@
             "event InvoiceListedForSale(uint256 indexed tokenId, uint256 salePrice)",
             "event InvoiceSold(uint256 indexed tokenId, address indexed buyer, uint256 price)"
         ];
-
         const ETH_TO_RAND = 1000000; // 1 ETH = 1,000,000 Rand
+        let contract;
+        let signer;
 
-        async function getGasPrice() {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const gasPrice = await provider.getGasPrice();
-            return gasPrice.mul(120).div(100); // 20% buffer
-        }
-
+        // Utility functions
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             if (pageId !== 'home' && contract) {
                 updateDashboards();
             }
+            // Hide welcome message on dashboards
+            document.querySelector('.welcome-message').style.display = pageId === 'home' ? 'block' : 'none';
         }
 
         function ethToRand(ethAmount) {
@@ -196,6 +207,16 @@
             return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
         }
 
+        function truncateAddress(address) {
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        async function getGasPrice() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const gasPrice = await provider.getGasPrice();
+            return gasPrice.mul(120).div(100); // 20% buffer
+        }
+
         async function checkNetwork() {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
@@ -206,6 +227,7 @@
             return true;
         }
 
+        // Wallet connection
         async function connectWallet() {
             clearLogAndReset();
             if (typeof window.ethereum !== 'undefined') {
@@ -231,6 +253,7 @@
             }
         }
 
+        // Event listeners
         function setupEventListeners() {
             contract.on("InvoiceCreated", (tokenId, amount, issuer, recipient) => {
                 console.log('Invoice created:', { tokenId: tokenId.toString(), amount: ethToRand(amount), issuer, recipient });
@@ -248,6 +271,7 @@
             });
         }
 
+        // Dashboard updates
         async function updateDashboards() {
             const currentAddress = await signer.getAddress();
             updateSmallBusinessDashboard(currentAddress);
@@ -370,6 +394,7 @@
             }
         }
 
+        // Transaction functions
         async function createInvoice(event) {
             event.preventDefault();
             try {
@@ -459,10 +484,7 @@
             }
         }
 
-        function truncateAddress(address) {
-            return `${address.slice(0, 6)}...${address.slice(-4)}`;
-        }
-
+        // Initialization
         function clearLogAndReset() {
             console.clear();
             console.log('Logs cleared and UI reset');
